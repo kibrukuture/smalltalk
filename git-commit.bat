@@ -22,5 +22,5 @@ git commit -am "Automated commit from %DATE%"
 rem Push the changes to the remote repository.
 git push
 
-rem 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
+rem
 
