@@ -2,26 +2,161 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&family=Source+Sans+Pro&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap');
+
+@layer base {
+  :root {
+    --color-text-base: #565c58;
+    --color-text-muted: #8a8a8a;
+    --color-text-inverted: #000;
+    --color-fill: #fff;
+    --color-fill-muted: #dae6df;
+    --color-fill-hover: #81f087;
+    --color-button-accent: #000;
+    --color-button-accent-hover: #333;
+    --color-outline: #000;
+    --color-outline-hover: #333;
+    --font-face-head: 'Playfair Display', serif;
+    --font-face-body: 'Source Sans Pro', sans-serif;
+    --font-face-code: 'Source Code Pro', monospace;
+    --flex-grow-sm: 1;
+    --flex-grow-md: 2;
+    --flex-grow-lg: 3;
+    --flex-grow-xl: 4;
+  }
+  .dark-theme {
+    --color-text-base: #fff;
+    --color-text-muted: #ccc;
+    --color-text-inverted: #fff;
+    --color-fill: #000;
+    --color-button-accent: #fff;
+    --color-button-accent-hover: #ccc;
+  }
 }
 
-@media (prefers-color-scheme: dark) {
+.choose-emoji-scroll-bar::-webkit-scrollbar {
+  width: 0;
+}
+
+@media screen and (min-width: 600px) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #dfe9eb;
+  }
+
+  *::-webkit-scrollbar {
+    width: 5px;
+    width: 5px;
+  }
+  *::-webkit-scrollbar-track {
+    border-radius: 5px;
+    background-color: #dfe9eb;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+    background-color: gray;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* @keyframes slideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.5s ease-out;
+}
+
+.animate-slideOut {
+  animation: slideOut 0.5s ease-out;
+}
+
+.hidden {
+  display: none;
+} */
+/* @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
   }
+} */
+
+/* body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+} */
+
+/*
+
+naming convetion for tailwind theming
+
+--color-text-base : normal text color
+--color-text-muted: dimmed text color
+--color-text-inverted: inverted text colors
+// background colors
+--color-fill: background color
+--color-button-accent: accent color for buttons
+--color-button-accent-hover: accent color for buttons on hover
+
+in the tailwind.config.js file
+
+{
+  theme: {
+    extend:
+            {    textColor: {
+
+                  skin:{
+                    base: 'var(--color-text-base)',
+                    muted: 'var(--color-text-muted)',
+                    inverted: 'var(--color-text-inverted)',
+
+                  }
+                },
+                backgroundColor: {
+                  fill: 'var(--color-fill)',
+                   button-accent: 'var(--color-button-accent)',
+                    button-accent-hover: 'var(--color-button-accent-hover)',
+                },
+
+
+  }
+
+  }
+
+
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-}
+
+*/

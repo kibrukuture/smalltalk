@@ -1,0 +1,42 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "json-server",
+      "author": "typicode",
+      "body": "A Node.js module that provides a fake REST API server for your frontend development."
+    },
+    {
+      "id": 2,
+      "title": "How to use JSON-server",
+      "author": "DigitalOcean",
+      "body": "This tutorial will show you how to use JSON-server to create a fake REST API server for your frontend development."
+    },
+    {
+      "id": 3,
+      "title": "JSON-server vs. Express",
+      "author": "Stack Overflow",
+      "body": "JSON-server and Express are both popular Node.js frameworks for creating REST APIs. In this article, we'll compare and contrast the two frameworks to help you decide which one is right for your project."
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "body": "This is a great tool for frontend development!",
+      "postId": 1
+    },
+    {
+      "id": 2,
+      "body": "I've been using JSON-server for a while now and I love it!",
+      "postId": 2
+    },
+    {
+      "id": 3,
+      "body": "JSON-server is a great way to quickly and easily create a fake REST API for your frontend development.",
+      "postId": 3
+    }
+  ],
+  "profile": {
+    "name": "typicode"
+  }
+}
