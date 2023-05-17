@@ -53,6 +53,20 @@ async function onAcceptOrDeclineFriendRequest(socket, data) {
       senderId: friendRequestReceivingUser.userId,
     });
 
+    /**
+     *  messageId: uuidv4(),
+      roomId: currentOpenChatId,
+      senderId: user.userId!,
+      text: chatMessage,
+      createdAt: new Date().toISOString(),
+      updatedAt: null,
+      message: [],
+      replyId: null,
+      emoji: '',
+      link: null,
+      attachment: null,
+     */
+
     //  problem saving chat message to db
     if (saveChatMessageStatus !== 'ok') {
       return socket.emit('OnFriendRequestAcceptOrDeclineMessageStoreFailed', {
@@ -64,7 +78,7 @@ async function onAcceptOrDeclineFriendRequest(socket, data) {
 
     const { rooms } = await getChatRooms(friendRequestReceivingUser.userId);
 
-    console.log('request accepted & rooms are:', rooms);
+    // console.log('request accepted & rooms are:', rooms);
 
     if (users[friendRequestSendingUser.userName]) {
       // friend request sender is online

@@ -30,7 +30,7 @@ export default function Bar() {
   const onBarCurrentTab = (e: any, tab: Tab) => setBarCurrentTab(tab);
 
   const navbar = (
-    <div className='w-full p-lg bg-black z-20 md:z-0 md:w-auto justify-center md:justify-start flex md:flex-col gap-md items-center text-skin-base fixed md:relative bottom-0  '>
+    <div className='w-full p-lg bg-black z-20 md:z-0 md:w-auto justify-center md:justify-start flex md:flex-col gap-md items-center text-skin-base   '>
       <button onClick={(e) => onBarCurrentTab(e, 'chat')} aria-label='chat' className={`${barCurrentTab === 'chat' && 'text-teal-400'}`}>
         <RiMessage3Line size={20} />
       </button>

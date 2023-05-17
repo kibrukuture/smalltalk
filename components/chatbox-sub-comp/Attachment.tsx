@@ -1,10 +1,14 @@
-import { useEffect, useRef } from 'react';
-
+import { useEffect, useRef, useState } from 'react';
+import BinaryFileModal from './BinaryFileModal';
 import { RiFileLine, RiImageLine } from 'react-icons/ri';
+import { BinFile } from '@/app/ChatContext';
 
-export default function Attachment({ setShowAttachment }: { setShowAttachment: React.Dispatch<React.SetStateAction<boolean>> }) {
+export default function Attachment({ setShowAttachment, setBinFile, setShowBinaryFileModal, setBinFileLoading }: { setShowAttachment: React.Dispatch<React.SetStateAction<boolean>>; setBinFile: React.Dispatch<React.SetStateAction<BinFile>>; setShowBinaryFileModal: React.Dispatch<React.SetStateAction<boolean>>; setBinFileLoading: React.Dispatch<React.SetStateAction<boolean>> }) {
+  // const [showBinaryFileModal, setShowBinaryFileModal] = useState(false);
+  // const [binFile, setBinFile] = useState({} as BinFile);
+
   const ref = useRef() as React.MutableRefObject<HTMLInputElement>;
-  const binaryDataFromLocalMachineRef = useRef() as React.MutableRefObject<HTMLInputElement>;
+  const binaryFileFromLocalFs = useRef() as React.MutableRefObject<HTMLInputElement>;
 
   useEffect(() => {
     function onClickOutside(event: any) {
@@ -19,17 +23,53 @@ export default function Attachment({ setShowAttachment }: { setShowAttachment: R
     };
   }, [ref]);
 
+  const getMimeExtension = (type: string) => type.split('/')[1];
+
+  // file type: 'image' | 'video' | 'audio' | 'document'
+
+  const getFileType = (type: string) => {
+    if (['image', 'video', 'audio'].includes(type.split('/')[0])) return type.split('/')[0];
+    return 'document';
+  };
+
   // handlers
   const onAttachment = (e: React.MouseEvent<HTMLButtonElement>, type: string) => {
     e.preventDefault();
     //  hanlle photos, videos, or audios
 
-    binaryDataFromLocalMachineRef.current.addEventListener('change', (e) => {
+    if (type === 'photovideoaudio') {
+      binaryFileFromLocalFs.current.setAttribute('accept', 'image/*,video/*,audio/*');
+    } else if (type === 'document') {
+      binaryFileFromLocalFs.current.setAttribute('accept', 'text/*, application/*');
+    }
+
+    binaryFileFromLocalFs.current.addEventListener('change', (e) => {
       const file = e.target.files[0];
+      setBinFileLoading(true);
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.addEventListener('progress', (e) => {
+        console.log((e.loaded / e.total) * 100, '% loaded');
+      });
+
+      reader.addEventListener('load', async (e) => {
+        setBinFile({
+          name: file.name,
+          type: getFileType(file.type),
+          size: file.size,
+          data: reader.result as string,
+          ext: getMimeExtension(file.type),
+          dur: file.type.startsWith('audio') || file.type.startsWith('video') ? await getMediaDuration(file) : 0,
+        });
+        setShowBinaryFileModal(true);
+        setBinFileLoading(false);
+        console.log(reader.result);
+      });
       console.log(file);
     });
-
-    binaryDataFromLocalMachineRef.current.click();
+    binaryFileFromLocalFs.current.click();
 
     setShowAttachment(false);
   };
@@ -44,9 +84,37 @@ export default function Attachment({ setShowAttachment }: { setShowAttachment: R
         <p>Document</p>
       </button>
       {/* invisible input type of file */}
-      <input ref={binaryDataFromLocalMachineRef} type='file' name='file' id='file' className='invisible w-0 h-0' />
+      <input ref={binaryFileFromLocalFs} type='file' name='file' id='file' className='invisible w-0 h-0' />
     </div>
   );
+}
+
+function getMediaDuration(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+      const mediaElement = document.createElement(file.type.startsWith('audio') ? 'audio' : 'video');
+      mediaElement.preload = 'metadata';
+
+      mediaElement.onloadedmetadata = function () {
+        window.URL.revokeObjectURL(mediaElement.src);
+        resolve(mediaElement.duration);
+      };
+
+      mediaElement.onerror = function () {
+        reject(new Error('Error occurred while getting media duration.'));
+      };
+
+      mediaElement.src = URL.createObjectURL(file);
+    };
+
+    reader.onerror = function () {
+      reject(new Error('Error occurred while reading the file.'));
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
 
 /*

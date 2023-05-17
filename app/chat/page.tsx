@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useContext, useRef } from 'react';
+import { useEffect, useContext, useRef, useState } from 'react';
 import { ChatContext, LastSeen } from '../ChatContext';
 import ChatBox from '@/components/ChatBox';
 import Bar from '@/components/Bar';
@@ -10,6 +10,7 @@ import Profile from '@/components/Profile';
 import Notificstion from '@/components/Notification';
 import Settings from '@/components/Settings';
 import { useRouter } from 'next/navigation';
+import { addNewMessage } from '../util.fns';
 
 // select tab
 const tab: any = {
@@ -20,8 +21,9 @@ const tab: any = {
 };
 
 export default function Chat() {
+  const [currentInnerWidth, setCurrentInnerWidth] = useState<number>(window.innerWidth);
   //consume context
-  const { rooms, setRooms, currentOpenChatId, setCurrentOpenChatId, typing, setTyping, setIsAllChatsLoading, isAllChatsLoading, setUser, user, barCurrentTab, setFriendRequests, friendRequests, setIsUserNotAbleToSendFriendRequest } = useContext(ChatContext);
+  const { rooms, isChatRoomTapped, setRooms, currentOpenChatId, setCurrentOpenChatId, typing, setTyping, setIsAllChatsLoading, isAllChatsLoading, setUser, user, barCurrentTab, setFriendRequests, friendRequests, setIsUserNotAbleToSendFriendRequest } = useContext(ChatContext);
 
   // router
   const router = useRouter();
@@ -30,42 +32,15 @@ export default function Chat() {
   const notificationRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('logInToken');
-    if (!token) return router.push('/');
-
-    const user = JSON.parse(localStorage.getItem('user') as string);
-
-    // authenticate user( emit)
-    socket.emit('AuthenticateUser', {
-      token,
-      user,
-    });
-
-    // set up user or redirect to login page.
-    socket.on('AuthenticateUser', (data) => {
-      if (data.status === 'ok') {
-        // user is authenticated & set up
-        socket.emit('SetupUser', data.user);
-      } else {
-        // user is not authenticated
-        router.push('/');
-      }
-    });
-
-    socket.on('JoinUserOnline', (data) => console.log('JoinUserOnline', data));
-
-    return () => {
-      socket.off('connect');
-    };
-  }, []);
-
-  useEffect(() => {
     // on reload set user data.
-    if (Object.keys(user).length) return;
     setUser(JSON.parse(localStorage.getItem('user') as string));
-  }, []);
 
-  useEffect(() => {
+    // listen to window resize.
+    const onResize = () => {
+      setCurrentInnerWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', onResize);
+
     // load all chats.
     setIsAllChatsLoading(true);
     fetch(`http://localhost:4040/api/loadchats/${JSON.parse(localStorage.getItem('user') as string).userId}`, {
@@ -96,76 +71,202 @@ export default function Chat() {
       .then((data) => {
         setFriendRequests(data.user); // users wanting requst.
       });
+
+    // on socket connect
+    socket.on('connect', () => {
+      const token = localStorage.getItem('logInToken');
+      if (!token) return router.push('/');
+
+      const user = JSON.parse(localStorage.getItem('user') as string);
+
+      // authenticate user( emit)
+      socket.emit('AuthenticateUser', {
+        token,
+        user,
+      });
+
+      // set up user or redirect to login page.
+      socket.on('AuthenticateUser', (data) => {
+        if (data.status === 'ok') {
+          // user is authenticated & set up
+          socket.emit('SetupUser', data.user);
+        } else {
+          // user is not authenticated
+          router.push('/');
+        }
+      });
+
+      // when a user joins online
+      socket.on('JoinUserOnline', (data) => console.log('JoinUserOnline', data));
+
+      // listen for friend request
+      socket.on('FriendRequestAccepted', (data) => {
+        inititateRoom(data, setRooms);
+        setCurrentOpenChatId(data.roomId);
+      });
+
+      // listen for a new message
+      socket.on('ExchangeChatMessage', (data) => {
+        console.log('a new message...', data);
+        const { message, roomId } = data;
+        //update rooms with new message
+        addNewMessage(roomId, message, setRooms);
+      });
+
+      // user is online, push notification.
+      socket.on('PushFriendRequestNotification', (data) => {
+        setFriendRequests([...friendRequests, data]);
+        if (notificationRef.current) notificationRef.current.play();
+      });
+    });
+
+    // on socket disconnect try to reconnect
+    socket.on('disconnect', () => {
+      socket.connect();
+    });
+
+    console.log('how many times, should be once');
+    return () => {
+      // socket.off('connect');
+      window.removeEventListener('resize', onResize);
+
+      // unmount socket listeners
+      console.log('I am being unmounted');
+    };
   }, []);
 
-  // listen for friend request
-  socket.on('FriendRequestAccepted', (data) => {
-    inititateRoom(data, setRooms);
-    setCurrentOpenChatId(data.roomId);
-  });
+  // useEffect(() => {
+  //   // on reload set user data.
+  //   if (Object.keys(user).length) return;
+  //   setUser(JSON.parse(localStorage.getItem('user') as string));
+  // }, []);
+
+  // listen to window resize.
+  // useEffect(() => {
+  //   const onResize = () => {
+  //     setCurrentInnerWidth(window.innerWidth);
+  //   };
+
+  //   window.addEventListener('resize', onResize);
+
+  //   return () => {
+  //     window.removeEventListener('resize', onResize);
+  //   };
+  // }, []);
+
+  // useEffect(() => {
+  //   // load all chats.
+  //   setIsAllChatsLoading(true);
+  //   fetch(`http://localhost:4040/api/loadchats/${JSON.parse(localStorage.getItem('user') as string).userId}`, {
+  //     method: 'GET',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       // "Authorization": `Bearer ${token}`
+  //     },
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       setIsAllChatsLoading(false);
+  //       if (data.status === 'ok') {
+  //         inititateRoom(data, setRooms);
+  //       } else {
+  //       }
+  //     });
+
+  //   // fetch all friend request.
+  //   fetch(`http://localhost:4040/api/user/friend-requests/${JSON.parse(localStorage.getItem('user') as string).userId}`, {
+  //     method: 'GET',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       // "Authorization": `Bearer ${token}`
+  //     },
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       setFriendRequests(data.user); // users wanting requst.
+  //     });
+  // }, []);
+
+  // // listen for friend request
+  // socket.on('FriendRequestAccepted', (data) => {
+  //   inititateRoom(data, setRooms);
+  //   setCurrentOpenChatId(data.roomId);
+  // });
 
   // connection not successful
-  socket.on('user:sendFriendRequest', (data) => {
-    const { status, message, statusCode } = data;
-    console.log(status, message, statusCode);
-  });
+  // socket.on('user:sendFriendRequest', (data) => {
+  //   const { status, message, statusCode } = data;
+  //   console.log(status, message, statusCode);
+  // });
 
-  socket.on('user:declinedFriendRequest', (data) => {
-    console.log('halahfksdljfasldfjaskdfjsdflas');
-    setIsUserNotAbleToSendFriendRequest(true);
-    setTimeout(() => {
-      setIsUserNotAbleToSendFriendRequest(false);
-    }, 5000);
-  });
+  // socket.on('user:declinedFriendRequest', (data) => {
+  //   console.log('halahfksdljfasldfjaskdfjsdflas');
+  //   setIsUserNotAbleToSendFriendRequest(true);
+  //   setTimeout(() => {
+  //     setIsUserNotAbleToSendFriendRequest(false);
+  //   }, 5000);
+  // });
 
-  socket.on('user:accepted-request', (data) => {});
+  // socket.on('user:accepted-request', (data) => {});
 
-  socket.on('user:typing', (data) => {
-    const { id, typing: isTyping, initiatedBy, sender, receiver } = data;
+  // socket.on('user:typing', (data) => {
+  //   const { id, typing: isTyping, initiatedBy, sender, receiver } = data;
 
-    // console.log('user:typing', isTyping);
-    const updateTyping = typing.map((chat) => {
-      if (chat.id === id) {
-        return { ...chat, typing: isTyping };
-      } else {
-        return chat;
-      }
-    });
-    setTyping(updateTyping);
-  });
+  //   // console.log('user:typing', isTyping);
+  //   const updateTyping = typing.map((chat) => {
+  //     if (chat.id === id) {
+  //       return { ...chat, typing: isTyping };
+  //     } else {
+  //       return chat;
+  //     }
+  //   });
+  //   setTyping(updateTyping);
+  // });
 
   // listen for a new message
-  socket.on('user:chatmessage', (data) => {});
+  // socket.on('ExchangeChatMessage', (data) => {
+  //   console.log('a new message...', data);
+  //   const { message, roomId } = data;
+  //   //update rooms with new message
+  //   addNewMessage(roomId, message, setRooms);
+  // });
 
-  // user is online, push notification.
-  socket.on('PushFriendRequestNotification', (data) => {
-    setFriendRequests([...friendRequests, data]);
+  // // user is online, push notification.
+  // socket.on('PushFriendRequestNotification', (data) => {
+  //   setFriendRequests([...friendRequests, data]);
 
-    if (notificationRef.current) notificationRef.current.play();
-  });
+  //   if (notificationRef.current) notificationRef.current.play();
+  // });
 
   // when my friend is disconnected, notify me.
-  socket.on('user:disconnected', (data) => {});
+  // socket.on('user:disconnected', (data) => {});
 
   // when my friend is connected, notify me.
 
-  socket.on('user:connected', (data) => {
-    console.log('user:connected', data);
-  });
+  // socket.on('user:connected', (data) => {
+  //   console.log('user:connected', data);
+  // });
 
+  console.log(':Component Rendered:', rooms);
   if (!rooms.size && isAllChatsLoading) return <div className='h-screen w-full bg-black flex items-center justify-center text-skin-base text-2xl font-bold text-center  '>loading</div>;
 
   return (
-    <div className='w-full flex'>
-      <Bar />
-      <div className=' h-screen max-h-screen flex flex-col gap-xs bg-skin-muted md:min-w-[30%] lg:min-w-[20%]'>{tab[barCurrentTab]}</div>
-      <ChatBox />
+    <div className='max-h-screen h-screen w-full flex flex-col-reverse md:flex md:flex-row'>
+      {/* medium and large screen */}
+      {currentInnerWidth > 768 && <Bar />}
+      {currentInnerWidth > 768 && <div className=' h-screen max-h-screen flex flex-col gap-xs bg-skin-muted md:min-w-[30%] lg:min-w-[20%]'>{tab[barCurrentTab]}</div>}
+      {currentInnerWidth > 768 && <ChatBox />}
+
+      {/* on smalll screen */}
+      {currentInnerWidth <= 768 && !isChatRoomTapped && <Bar />}
+      {currentInnerWidth <= 768 && !isChatRoomTapped && <div className=' h-screen max-h-screen flex flex-col gap-xs bg-skin-muted md:min-w-[30%] lg:min-w-[20%]'>{tab[barCurrentTab]}</div>}
+      {currentInnerWidth <= 768 && isChatRoomTapped && <ChatBox />}
       {false && <UserDetail />}
       <audio ref={notificationRef} src='/sound-effects/notification.wav' />
     </div>
   );
 }
-
+//
 function inititateRoom(data: any, setRooms: any) {
   const map = new Map();
   data.rooms.forEach((room: any) => {

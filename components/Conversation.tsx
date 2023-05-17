@@ -4,6 +4,7 @@ import { RiLinksFill, RiCheckDoubleLine, RiDeleteBinLine, RiCheckLine, RiReplyLi
 import { formatAmPm } from '@/app/util.fns';
 import { Message, User } from '@/app/ChatContext';
 import { distanceToNow } from '@/app/util.fns';
+import { getColorFromName, getInitials } from '@/app/util.fns';
 import Link from 'next/link';
 export default function Conversation({ message, friend }: { message: Message; friend: User }) {
   const user = JSON.parse(localStorage.getItem('user') as string) as User;
@@ -60,31 +61,16 @@ export default function Conversation({ message, friend }: { message: Message; fr
     },
   });
 
-  const link = {
-    siteName: 'YouTube',
-    url: 'https://www.youtube.com/watch?v=zqeqdepYkcw',
-    title: 'Comedian makes a CHEEKY dig at Amanda Holden! | Auditions | BGT 2023',
-    description: `Funny-man, Bennet Kavanagh, makes a tuneful tease at Amanda and has Simon Cowell in absolute stitches!See more from Britain's Got Talent at http://itv.com/BG...`,
-    type: 'video',
-    date: '2021-03-03T16:00:00.000Z',
-    image: {
-      url: 'https://i.ytimg.com/vi/zqeqdepYkcw/maxresdefault.jpg',
-      width: '1280',
-      height: '720',
-      type: 'jpg',
-    },
-  };
-
   return (
     <div
-      className={` ${!isFromMe ? 'self-end' : 'self-start'} flex relative   flex-col bg-transparent gap-xs  items-center
+      className={` ${isFromMe ? 'self-end' : 'self-start'} flex relative   flex-col bg-transparent gap-xs  items-center
   max-w-[70%]  sm:max-w-[60%  md:max-w-[50%]  lg:max-w-[40%]  xl:max-w-[30%] `}
     >
-      <div onContextMenu={onContextMenu} onClick={() => {}} className={` ${!isFromMe ? 'rounded-t-xl rounded-bl-xl ' : 'rounded-t-xl rounded-br-xl '}   rounded bg-skin-muted shadow-default relative  p-lg grow w-full  ${!isFromMe ? 'bg-skin-sender' : 'bg-skin-receiver'} break-words`}>
+      <div onContextMenu={onContextMenu} onClick={() => {}} className={` ${isFromMe ? 'rounded-t-xl rounded-bl-xl ' : 'rounded-t-xl rounded-br-xl '}   rounded bg-skin-muted shadow-default relative  p-lg grow w-full  ${isFromMe ? 'bg-skin-sender' : 'bg-skin-receiver'} break-words`}>
         {message.link && (
           <div className='text-skin-muted flex gap-sm items-center text-xs font-mono    '>
             <RiLinksFill className='inline-block' />
-            <a className='break-all block' href={link.url} target='_blank'>
+            <a className='break-all block' href={message.link.url} target='_blank'>
               {message.link.url!.length > 30 ? message.link.url!.slice(0, 30) + '...' : message.link.url!}
             </a>
           </div>
@@ -110,9 +96,10 @@ export default function Conversation({ message, friend }: { message: Message; fr
         </p>
       </div>
 
-      <div className={`font-mono flex ${!isFromMe && 'flex-row-reverse justify-start'} gap-xs text-xs  items-center pl-lg w-full  `}>
-        <button className='overflow-hidden text-skin-muted w-6 h-6 outline outline-offset-2 outline-1 flex items-center justify-center   rounded-full '>
-          <img className='object-cover h-10 w-10 ' src='/dog.jpg' alt='' />
+      <div className={`font-mono flex ${isFromMe && 'flex-row-reverse justify-start'} gap-xs text-xs  items-center pl-lg w-full  `}>
+        <button className={`relative overflow-hidden text-skin-muted min-w-6 min-h-6 w-6 h-6  flex items-center justify-center   rounded-full flex-wrap  `} style={{ backgroundColor: getColorFromName(messageBelongsTo.name), color: 'whitesmoke' }}>
+          {messageBelongsTo.avatarUrl && <img className='object-cover h-8 w-8 ' src={messageBelongsTo.avatarUrl} alt='' />}
+          {!messageBelongsTo.avatarUrl && <span className='text-xs w-full h-full flex items-center justify-center text-white'>{getInitials(messageBelongsTo.name)}</span>}
         </button>
         <p>{messageBelongsTo.name}</p>
         <p className='text-skin-muted'>{formatAmPm(message.createdAt)}</p>

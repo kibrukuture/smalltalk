@@ -199,8 +199,6 @@ export const userAllChatRoomLoader = async (req, res) => {
     status: 'ok',
     rooms: data.rooms,
   });
-
-  console.log(data);
   return;
 };
 

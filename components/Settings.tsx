@@ -30,7 +30,7 @@ export default function Settings() {
       <Wallpaper />
 
       {/* delete account */}
-      <div className='bg-red-400 p-md rounded text-white flex items-center justify-center mt-lg'>
+      <div className='bg-red-400 p-md rounded text-white w-fit  md:w-full md:flex items-center justify-center mt-lg'>
         <button onClick={() => setDeleteAccountModal(true)} className='w-full h-full'>
           Delete Account
         </button>

@@ -165,11 +165,12 @@ function Conversation({ room }: { room: Room }) {
     name = friend.name,
     status = 'online';
 
-  const { setCurrentOpenChatId } = useContext(ChatContext);
+  const { setCurrentOpenChatId, setIsChatRoomTapped } = useContext(ChatContext);
 
   //
   const onCurrentOpenChat = (e: React.MouseEvent<HTMLButtonElement>) => {
     setCurrentOpenChatId(e.currentTarget.id);
+    setIsChatRoomTapped(true);
   };
 
   return (

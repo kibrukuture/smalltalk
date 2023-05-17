@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect, useContext, useRef } from 'react';
-import { ChatContext, Message, Connection, AllChats, Room } from '@/app/ChatContext';
-import { RiVidiconFill, RiImageLine, RiFileLine, RiAttachmentLine, RiPhoneFill, RiMore2Fill, RiSendPlaneFill, RiLock2Fill } from 'react-icons/ri';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import { ChatContext, Message, Room, BinFile, User } from '@/app/ChatContext';
+import { RiVidiconFill, RiImageLine, RiFileLine, RiArrowGoBackFill, RiAttachmentLine, RiPhoneFill, RiMore2Fill, RiSendPlaneFill, RiLock2Fill } from 'react-icons/ri';
 import { BsEmojiLaughingFill } from 'react-icons/bs';
 import Conversation from './Conversation';
 import socket from '@/app/socket.config';
@@ -10,24 +10,25 @@ import { formatAmPm } from '@/app/util.fns';
 import ThreeDotAnimation from './chatbox-sub-comp/TypingAnim';
 import { v4 as uuidv4 } from 'uuid';
 import Attachment from './chatbox-sub-comp/Attachment';
+import BinaryFileModal from './chatbox-sub-comp/BinaryFileModal';
+import BinFileLoading from './chatbox-sub-comp/BinFileLoadig';
+import { addNewMessage } from '@/app/util.fns';
 
 export default function ChatBox() {
   const [showAttachment, setShowAttachment] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [typing, setTyping] = useState(false);
   const [isFocus, setIsFocus] = useState(false);
+  const [showBinaryFileModal, setShowBinaryFileModal] = useState(false);
+  const [binFile, setBinFile] = useState({} as BinFile);
+  const [binFileLoading, setBinFileLoading] = useState(false);
   // console.log(typing);
-  const { currentOpenChatId, lastSeen, rooms, setRooms, typing: typingState, wallpaper } = useContext(ChatContext);
+  const { currentOpenChatId, setIsChatRoomTapped, lastSeen, rooms, setRooms, typing: typingState, wallpaper } = useContext(ChatContext);
+
+  const user = JSON.parse(localStorage.getItem('user')!) as User;
 
   let currentRoom: Room;
   if (rooms.size) currentRoom = rooms.get(currentOpenChatId as string)!;
-
-  console.log(lastSeen);
-  const isUserTyping = typingState.find((user) => user.id === currentOpenChatId)?.typing || false;
-
-  const typingIntervalRef = useRef<string>('');
-
-  let typingInterval: string | number | NodeJS.Timeout | undefined;
 
   // use ref
   const chatBoxRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,31 @@ export default function ChatBox() {
     e.preventDefault();
     if (chatMessage === '') return;
 
-    socket.emit('user:chatmessage', {});
+    const message: Message = {
+      messageId: uuidv4(),
+      roomId: currentOpenChatId,
+      senderId: user.userId!,
+      text: chatMessage,
+      createdAt: new Date().toISOString(),
+      updatedAt: null,
+      message: [],
+      replyId: null,
+      emoji: '',
+      link: null,
+      attachment: null,
+    };
+
+    socket.emit('ExchangeChatMessage', {
+      message,
+      roomId: currentOpenChatId,
+      sender: user,
+      friend: currentRoom.friend,
+    });
+
+    //update rooms with new message
+    addNewMessage(currentOpenChatId, message, setRooms);
+
+    // update local message.
     setChatMessage(''); // clear chat message
 
     const lastChild = chatContentRef.current?.lastElementChild as HTMLDivElement;
@@ -55,86 +80,52 @@ export default function ChatBox() {
     chatContentRef.current && lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
   };
 
-  const onInputFieldChange = (e: any) => {
-    setChatMessage((prev) => {
-      if (prev.length !== e.target.value.length) setTyping(true);
-      else setTyping(false);
-      return e.target.value;
-    });
-  };
-
-  const onInputFieldBlur = (e: any) => {
-    setIsFocus(false);
-    setTyping(false);
-    clearInterval(typingInterval);
-  };
-
-  useEffect(() => {
-    if (!isFocus) return clearInterval(typingInterval);
-
-    typingInterval = setInterval(() => {
-      if (typingIntervalRef.current === chatMessage) return setTyping(false);
-      setTyping(true);
-      typingIntervalRef.current = chatMessage;
-    }, 500);
-    return () => clearInterval(typingInterval);
-  }, [typing]);
-
   const onMessageInputField = (e: any) => {
     setChatMessage(e.target.value);
-    // const user = JSON.parse(localStorage.getItem('user') as string);
-    // socket.emit('user:typing', { sender: user, receiver, id: currentOpenChatId, initiatedBy: user });
-    // setTyping(true);
-  };
-  // key up
-  const onMessageInputFieldKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    console.log(e.keyCode);
   };
 
-  // console.log(allChats.length);
-  if (!currentOpenChatId || rooms.size === 0)
-    // no chat selected
-    return <NoChatSelected />;
-  const user = JSON.parse(localStorage.getItem('user') as string);
+  if (!currentOpenChatId || rooms.size === 0) return <NoChatSelected />;
   return (
-    //
     <div ref={chatBoxRef} className='flex flex-col max-h-screen h-screen w-full '>
-      <header className='pointer w-full flex justify-between text-sm shadow-default z-10 p-xl text-skin-muted '>
-        <div className='flex   gap-sm'>
-          <div className='relative'>
-            <span className='h-2 w-2 bg-green-500 rounded-full z-10 absolute    '></span>
-            <button className='relative overflow-hidden text-skin-muted w-8 h-8 shadow-default flex items-center justify-center   rounded-full '>
-              <img className='object-cover h-12 w-12 ' src={currentRoom.friend.avatarUrl} alt='' />
-            </button>
-          </div>
-          <div className='flex flex-col '>
-            <p>{currentRoom.friend.name} </p>
+      <div className='flex items-center   '>
+        {/* arrow back button   */}
+        {window.innerWidth <= 768 && (
+          <button className='grow-0 p-md ' onClick={() => setIsChatRoomTapped(false)}>
+            <RiArrowGoBackFill className='font-bold' size={20} />
+          </button>
+        )}
+        <header className='grow pointer w-full flex justify-between text-sm shadow-default z-10 p-xl text-skin-muted '>
+          <div className='flex   gap-sm'>
+            <div className='relative'>
+              <span className='h-2 w-2 bg-green-500 rounded-full z-10 absolute    '></span>
+              <button className='relative overflow-hidden text-skin-muted w-8 h-8 shadow-default flex items-center justify-center   rounded-full '>
+                <img className='object-cover h-12 w-12 ' src={currentRoom.friend.avatarUrl} alt='' />
+              </button>
+            </div>
+            <div className='flex flex-col '>
+              <p>{currentRoom.friend.name} </p>
 
-            <div className='flex items-center gap-sm'>
-              <div className=''>
-                {true && <p className=' text-green-400 text-xs'>Online</p>}
-                {false && <p className='text-skin-muted text-xs'>last seen 2:30 PM</p>}
+              <div className='flex items-center gap-sm'>
+                <div className=''>
+                  {true && <p className=' text-green-400 text-xs'>Online</p>}
+                  {false && <p className='text-skin-muted text-xs'>last seen 2:30 PM</p>}
+                </div>
               </div>
-              {isUserTyping && (
-                <p className='flex items-center gap-tiny  text-skin-muted text-xs text-green-400'>
-                  Typing <ThreeDotAnimation />
-                </p>
-              )}
             </div>
           </div>
-        </div>
-        <div className='flex gap-sm items-center  '>
-          <button className=' '>
-            <RiVidiconFill className='font-bold' />
-          </button>
-          <button className=''>
-            <RiPhoneFill className='font-bold' />
-          </button>
-          <button className=''>
-            <RiMore2Fill className='font-bold' />
-          </button>
-        </div>
-      </header>
+          <div className='flex gap-sm items-center  '>
+            <button className=' '>
+              <RiVidiconFill className='font-bold' />
+            </button>
+            <button className=''>
+              <RiPhoneFill className='font-bold' />
+            </button>
+            <button className=''>
+              <RiMore2Fill className='font-bold' />
+            </button>
+          </div>
+        </header>
+      </div>
       <div
         style={{
           backgroundImage: `${wallpaper === 'default' && 'url(./wallpaper/default.png)'}`,
@@ -172,21 +163,26 @@ export default function ChatBox() {
           <button>
             <BsEmojiLaughingFill />
           </button>
-          <input onKeyUp={onMessageInputFieldKeyUp} onBlur={() => setTyping(false)} onChange={onMessageInputField} value={chatMessage} placeholder='Message' className='block w-0 grow outline-none border-none p-md bg-black text-skin-muted pl-lg font-mono' type='text' />
+          <input onChange={onMessageInputField} value={chatMessage} placeholder='Message' className='block w-0 grow outline-none border-none p-md bg-black text-skin-muted pl-lg font-mono' type='text' />
           <div className=''>
-            {showAttachment && <Attachment setShowAttachment={setShowAttachment} />}
+            {showAttachment && <Attachment setBinFileLoading={setBinFileLoading} setShowAttachment={setShowAttachment} setBinFile={setBinFile} setShowBinaryFileModal={setShowBinaryFileModal} />}
+
+            {binFileLoading && /* (binFile.type === 'audio' || binFile.type === 'video') && */ <BinFileLoading />}
+
             <button onClick={onAttachment}>
               <RiAttachmentLine />
             </button>
           </div>
         </div>
-        {false && <button>d</button>}
         <button type='submit' className='text-skin-base flex items-center justify-center bg-black w-10 h-10 rounded-full'>
           <RiSendPlaneFill />
         </button>
 
         {/* attachment */}
         {/* {showAttachment && <Attachment setShowAttachment={setShowAttachment} />} */}
+
+        {/* show modal after file is choosen */}
+        {showBinaryFileModal && <BinaryFileModal binFile={binFile} setShowBinaryFileModal={setShowBinaryFileModal} />}
       </form>
     </div>
   );

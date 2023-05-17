@@ -20,11 +20,11 @@ async function onDisconnect(socket, lastSeen) {
 
   //   // user is online
 
-  // remove user from lastSeen
-  delete lastSeen[lastSeenUserId];
+  // // remove user from lastSeen
+  // delete lastSeen[lastSeenUserId];
 
-  // remove user from online users
-  delete users[socket.username];
+  // // remove user from online users
+  // delete users[socket.username];
 
   //
 

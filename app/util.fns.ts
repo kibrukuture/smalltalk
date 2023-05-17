@@ -1,4 +1,5 @@
 import { formatDistanceToNow, format } from 'date-fns';
+import { Message, Room } from './ChatContext';
 
 export function formatAmPm(timestamp: string | number | Date) {
   const date = new Date(timestamp);
@@ -173,9 +174,12 @@ export function getInitials(name: string) {
   }
 }
 
-function playSoundEffect(type: string) {
-  document.removeEventListener('click', () => playSoundEffect(type)); //remove event listener
-
-  const audio = new Audio('/sound-effects/notification.wav');
-  audio.play();
-}
+// new message, renew local rooms.
+export const addNewMessage = (roomId: string, message: Message, setRooms: (rooms: Map<string, Room>) => void) => {
+  setRooms((prev) => {
+    const newRoom = new Map<string, Room>(prev);
+    const newMessages = newRoom.get(roomId)!.messages.concat(message);
+    newRoom.get(roomId)!.messages = newMessages;
+    return newRoom;
+  });
+};

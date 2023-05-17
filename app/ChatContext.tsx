@@ -170,6 +170,25 @@ export type Room = {
   friend: User;
   messages: Message[];
 };
+/*
+  const [binaryFile, setBinaryFile] = useState({
+    name: '',
+    type: '',
+    size: '',
+    data: '',
+    ext: '',
+  });
+
+*/
+
+export type BinFile = {
+  name: string;
+  type: string;
+  size: number;
+  data: string;
+  ext: string;
+  dur?: number;
+};
 
 export type UserProfile = { url: string };
 
@@ -196,6 +215,8 @@ export const ChatContext = createContext({
   setUser: (user: User) => {},
   setAlert: (alert: Alert) => {},
   setRooms: (rooms: Map<string, Room>) => {},
+  setIsChatRoomTapped: (isChatRoomTapped: boolean) => {},
+  isChatRoomTapped: false,
   rooms: new Map<string, Room>(),
   alert: {} as Alert,
   user: {} as User,
