@@ -145,7 +145,10 @@ export type Attachment = {
   url: string;
   width: number | null;
   height: number | null;
-  size: string | null;
+  size: number | null;
+  name: string;
+  ext: string;
+  dur: number | null;
 };
 
 export type Message = {
@@ -187,7 +190,7 @@ export type BinFile = {
   size: number;
   data: string;
   ext: string;
-  dur?: number;
+  dur: number | null;
 };
 
 export type UserProfile = { url: string };

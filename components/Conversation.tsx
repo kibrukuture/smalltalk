@@ -2,10 +2,16 @@
 import { useState, useRef, useCallback } from 'react';
 import { RiLinksFill, RiCheckDoubleLine, RiDeleteBinLine, RiCheckLine, RiReplyLine, RiFileCopy2Line, RiShareForward2Line } from 'react-icons/ri';
 import { formatAmPm } from '@/app/util.fns';
-import { Message, User } from '@/app/ChatContext';
+import { Message, User, Attachment, BinFile } from '@/app/ChatContext';
 import { distanceToNow } from '@/app/util.fns';
 import { getColorFromName, getInitials } from '@/app/util.fns';
 import Link from 'next/link';
+import AudioFile from './chatbox-sub-comp/attachment-related/AudioFile';
+import ImageFile from './chatbox-sub-comp/attachment-related/ImageFile';
+import VideoFile from './chatbox-sub-comp/attachment-related/VideoFile';
+import DocumentFile from './chatbox-sub-comp/attachment-related/DocumentFile';
+import { ContextMenu, MenuItem, ContextMenuTrigger } from 'react-contextmenu';
+
 export default function Conversation({ message, friend }: { message: Message; friend: User }) {
   const user = JSON.parse(localStorage.getItem('user') as string) as User;
 
@@ -13,21 +19,39 @@ export default function Conversation({ message, friend }: { message: Message; fr
 
   const messageBelongsTo = isFromMe ? user : friend;
 
+  let AttachmentFile;
+  if (message.attachment) {
+    switch (message.attachment.type) {
+      case 'audio':
+        AttachmentFile = <AudioFile attachment={message.attachment} />;
+        break;
+      case 'image':
+        AttachmentFile = <ImageFile attachment={message.attachment} />;
+        break;
+      case 'video':
+        AttachmentFile = <VideoFile attachment={message.attachment} />;
+        break;
+      case 'document':
+        AttachmentFile = <DocumentFile attachment={message.attachment} />;
+        break;
+    }
+  }
+
   //state
-  const [showMenu, setShowMenu] = useState(false),
-    [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 }),
-    menuRef = useRef(null);
+  // const [showMenu, setShowMenu] = useState(false),
+  //   [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 }),
+  //   menuRef = useRef(null);
 
   //handlers
-  const onContextMenu = (event: any) => {
-    event.preventDefault();
-    setShowMenu(true);
-    setMenuPosition({ x: event.clientX, y: event.clientY });
-  };
+  // const onContextMenu = (event: any) => {
+  //   event.preventDefault();
+  //   setShowMenu(true);
+  //   setMenuPosition({ x: event.clientX, y: event.clientY });
+  // };
 
-  const onMenuClose = () => {
-    setShowMenu(false);
-  };
+  // const onMenuClose = () => {
+  //   setShowMenu(false);
+  // };
 
   // useEffect(() => {
   //   if (showMenu) {
@@ -51,33 +75,36 @@ export default function Conversation({ message, friend }: { message: Message; fr
   //   }
   // }, [showMenu]);
 
-  const longPressProps = useLongPress({
-    onClick: (ev) => {
-      /*console.log('on click', ev.button, ev.shiftKey)*/
-      setShowMenu(false);
-    },
-    onLongPress: (ev) => {
-      setShowMenu(true);
-    },
-  });
+  // const longPressProps = useLongPress({
+  //   onClick: (ev) => {
+  //     /*console.log('on click', ev.button, ev.shiftKey)*/
+  //     setShowMenu(false);
+  //   },
+  //   onLongPress: (ev) => {
+  //     setShowMenu(true);
+  //   },
+  // });
 
+  console.log('inside conversation: ', message.text);
   return (
     <div
       className={` ${isFromMe ? 'self-end' : 'self-start'} flex relative   flex-col bg-transparent gap-xs  items-center
   max-w-[70%]  sm:max-w-[60%  md:max-w-[50%]  lg:max-w-[40%]  xl:max-w-[30%] `}
     >
-      <div onContextMenu={onContextMenu} onClick={() => {}} className={` ${isFromMe ? 'rounded-t-xl rounded-bl-xl ' : 'rounded-t-xl rounded-br-xl '}   rounded bg-skin-muted shadow-default relative  p-lg grow w-full  ${isFromMe ? 'bg-skin-sender' : 'bg-skin-receiver'} break-words`}>
-        {message.link && (
-          <div className='text-skin-muted flex gap-sm items-center text-xs font-mono    '>
-            <RiLinksFill className='inline-block' />
-            <a className='break-all block' href={message.link.url} target='_blank'>
-              {message.link.url!.length > 30 ? message.link.url!.slice(0, 30) + '...' : message.link.url!}
-            </a>
-          </div>
-        )}
-        {linkify(message.text)}
+      <ContextMenuTrigger id={message.messageId}>
+        <div onClick={() => {}} className={` ${isFromMe ? 'rounded-t-xl rounded-bl-xl ' : 'rounded-t-xl rounded-br-xl '}   rounded bg-skin-muted shadow-default relative    grow w-full  ${isFromMe ? 'bg-skin-sender' : 'bg-skin-receiver'} break-words`}>
+          {message.link && (
+            <div className='text-skin-muted flex gap-sm items-center text-xs font-mono    '>
+              <RiLinksFill className='inline-block' />
+              <a className='break-all block' href={message.link.url} target='_blank'>
+                {message.link.url!.length > 30 ? message.link.url!.slice(0, 30) + '...' : message.link.url!}
+              </a>
+            </div>
+          )}
+          {message.attachment && AttachmentFile}
+          <div className='p-lg'>{linkify(message.text)}</div>
 
-        {/* {false && (
+          {/* {false && (
           <div className='ml-sm border-l-2 border-l-gray-800 rounded   bg-transparent   p-2 flex flex-col gap-sm font-mono my-4  '>
             <Link href={message.link!.url} target='_blank'>
               <img src={message.link!.imageUrl} alt={message.link!.title} className='block w-full rounded-md' />
@@ -90,12 +117,12 @@ export default function Conversation({ message, friend }: { message: Message; fr
             </p>
           </div>
         )} */}
-        <p className=' flex  justify-end gap-xs text-skin-muted font-mono text-xs    items-center'>
-          <RiCheckDoubleLine className='inline-block' />
-          Delivered
-        </p>
-      </div>
-
+          <p className=' flex pr-sm  justify-end gap-xs text-skin-muted font-mono text-xs    items-center'>
+            <RiCheckDoubleLine className='inline-block' />
+            Delivered
+          </p>
+        </div>
+      </ContextMenuTrigger>
       <div className={`font-mono flex ${isFromMe && 'flex-row-reverse justify-start'} gap-xs text-xs  items-center pl-lg w-full  `}>
         <button className={`relative overflow-hidden text-skin-muted min-w-6 min-h-6 w-6 h-6  flex items-center justify-center   rounded-full flex-wrap  `} style={{ backgroundColor: getColorFromName(messageBelongsTo.name), color: 'whitesmoke' }}>
           {messageBelongsTo.avatarUrl && <img className='object-cover h-8 w-8 ' src={messageBelongsTo.avatarUrl} alt='' />}
@@ -104,122 +131,58 @@ export default function Conversation({ message, friend }: { message: Message; fr
         <p>{messageBelongsTo.name}</p>
         <p className='text-skin-muted'>{formatAmPm(message.createdAt)}</p>
       </div>
-      {showMenu && (
-        <div
-          ref={menuRef}
-          style={{
-            position: 'absolute',
-            top: menuPosition.y,
-            left: menuPosition.x,
-          }}
-        >
-          <ContextMenu />
-        </div>
-      )}
+
+      <div className='z-50'>
+        <ContextMenu id={message.messageId}>
+          <ContextMenuList />
+        </ContextMenu>
+      </div>
     </div>
   );
 }
 
 const emojis = ['😀', '😂', '😍', '🤔', '🤯', '👍', '👎', '👀', '🙌', '👏', '🔥', '💩', '🌈', '🍕', '🍔', '🍟', '🍩', '🍦', '🍭', '🍫'];
-export const ContextMenu = () => {
+export const ContextMenuList = () => {
   return (
-    <div className='h-36   flex   gap-sm max-w-fit items-start font-mono text-skin-muted text-sm    '>
+    <div className='h-36   flex   gap-sm max-w-fit items-start font-mono text-skin-base text-sm z-50    '>
       <div className='choose-emoji-scroll-bar bg-skin-muted p-sm h-36  overflow-y-auto flex flex-col   items-center gap-xs rounded-xl   '>
         {emojis.map((emoji) => (
-          <button key={emoji} className=''>
-            {emoji}
-          </button>
+          <MenuItem data={{ emoji }} onClick={console.log}>
+            <button key={emoji} className=''>
+              {emoji}
+            </button>
+          </MenuItem>
         ))}
       </div>
-      <div className='h-full  flex flex-col   bg-skin-muted   rounded'>
-        <button className='flex items-center hover:bg-skin-hover grow px-md gap-md'>
-          <RiReplyLine />
-          <span>Reply</span>
-        </button>
-        <button className='flex items-center hover:bg-skin-hover grow px-md gap-md'>
-          <RiFileCopy2Line />
-          <span>Copy</span>
-        </button>
-        <button className='flex items-center hover:bg-skin-hover grow px-md gap-md'>
-          <RiShareForward2Line />
-          <span>Forward</span>
-        </button>
-        <button className='flex items-center hover:bg-skin-hover grow px-md gap-md'>
-          <RiDeleteBinLine />
-          <span>Delete</span>
-        </button>
+      <div className='h-full p-lg  flex flex-col    bg-skin-muted   rounded'>
+        <MenuItem data={{ reply: 'reply' }} onClick={console.log} className='grow'>
+          <button className='flex h-full   w-full items-center hover:bg-skin-hover grow px-md gap-md'>
+            <RiReplyLine />
+            <span>Reply</span>
+          </button>
+        </MenuItem>
+        <MenuItem data={{ copy: 'copy' }} onClick={console.log} className='grow'>
+          <button className='flex h-full  w-full items-center hover:bg-skin-hover grow px-md gap-md'>
+            <RiFileCopy2Line />
+            <span>Copy</span>
+          </button>
+        </MenuItem>
+        <MenuItem data={{ forward: 'forward' }} onClick={console.log} className='grow'>
+          <button className='flex h-full  w-full items-center hover:bg-skin-hover grow px-md gap-md'>
+            <RiShareForward2Line />
+            <span>Forward</span>
+          </button>
+        </MenuItem>
+        <MenuItem data={{ delete: 'delete' }} onClick={console.log} className='grow'>
+          <button className='flex h-full   w-full items-center hover:bg-skin-hover grow px-md gap-md'>
+            <RiDeleteBinLine />
+            <span>Delete</span>
+          </button>
+        </MenuItem>
       </div>
     </div>
   );
 };
-
-function preventDefault(e: Event) {
-  if (!isTouchEvent(e)) return;
-
-  if (e.touches.length < 2 && e.preventDefault) {
-    e.preventDefault();
-  }
-}
-
-export function isTouchEvent(e: Event): e is TouchEvent {
-  return e && 'touches' in e;
-}
-
-interface PressHandlers<T> {
-  onLongPress: (e: React.MouseEvent<T> | React.TouchEvent<T>) => void;
-  onClick?: (e: React.MouseEvent<T> | React.TouchEvent<T>) => void;
-}
-
-interface Options {
-  delay?: number;
-  shouldPreventDefault?: boolean;
-}
-
-function useLongPress<T>({ onLongPress, onClick }: PressHandlers<T>, { delay = 200, shouldPreventDefault = true }: Options = {}) {
-  const [longPressTriggered, setLongPressTriggered] = useState(false);
-  const timeout = useRef<NodeJS.Timeout>();
-  const target = useRef<EventTarget>();
-
-  const start = useCallback(
-    (e: React.MouseEvent<T> | React.TouchEvent<T>) => {
-      e.persist();
-      const clonedEvent = { ...e };
-
-      if (shouldPreventDefault && e.target) {
-        e.target.addEventListener('touchend', preventDefault, { passive: false });
-        target.current = e.target;
-      }
-
-      timeout.current = setTimeout(() => {
-        onLongPress(clonedEvent);
-        setLongPressTriggered(true);
-      }, delay);
-    },
-    [onLongPress, delay, shouldPreventDefault],
-  );
-
-  const clear = useCallback(
-    (e: React.MouseEvent<T> | React.TouchEvent<T>, shouldTriggerClick = true) => {
-      timeout.current && clearTimeout(timeout.current);
-      shouldTriggerClick && !longPressTriggered && onClick?.(e);
-
-      setLongPressTriggered(false);
-
-      if (shouldPreventDefault && target.current) {
-        target.current.removeEventListener('touchend', preventDefault);
-      }
-    },
-    [shouldPreventDefault, onClick, longPressTriggered],
-  );
-
-  return {
-    onMouseDown: (e: React.MouseEvent<T>) => start(e),
-    onTouchStart: (e: React.TouchEvent<T>) => start(e),
-    onMouseUp: (e: React.MouseEvent<T>) => clear(e),
-    onMouseLeave: (e: React.MouseEvent<T>) => clear(e, false),
-    onTouchEnd: (e: React.TouchEvent<T>) => clear(e),
-  };
-}
 
 function linkify(text: string) {
   const urlRegex = /(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/;

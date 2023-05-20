@@ -8,7 +8,11 @@ import onSendFriendRequest from './sockets/handlers/onSendFriendRequest.js';
 import onChatMessage from './sockets/handlers/onChatMessage.js';
 import onUserTyping from './sockets/handlers/onUserTyping.js';
 import onAcceptOrDeclineFriendRequest from './sockets/handlers/onAcceptOrDeclineFriendRequest.js';
+import onStartVideoCall from './sockets/handlers/onStartVideoCall.js';
+import onVideoCallRejection from './sockets/handlers/onVideoCallRejection.js';
+import onEndVideoCall from './sockets/handlers/onEndVideoCall.js';
 import { lastSeen } from './datastr/index.js';
+import onVideoCallAccepted from './sockets/handlers/onVideoCallAccepted.js';
 
 // server setup
 const server = createServer(app);
@@ -30,6 +34,10 @@ io.on('connection', (socket) => {
   // socket.on('user:acceptFriendRequest', (data) => onAcceptFriendRequest(socket, data)); // accept friend request
   // socket.on('user:rejectFriendRequest', (data) => onRejectFriendRequest(socket, data)); // reject friend request
   socket.on('AcceptOrDeclineFriendRequest', (data) => onAcceptOrDeclineFriendRequest(socket, data));
+  socket.on('VideoCallingRejected', (data) => onVideoCallRejection(socket, data)); // video call rejection
+  socket.on('StartVideoCall', (data) => onStartVideoCall(socket, data)); // start video call   ;
+  socket.on('EndVideoCall', (data) => onEndVideoCall(socket, data)); // end video call
+  socket.on('VideoCallAccepted', (data) => onVideoCallAccepted(socket, data)); // end video call
   socket.on('disconnect', () => onDisconnect(socket, lastSeen)); // disconnect
 });
 

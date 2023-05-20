@@ -83,6 +83,18 @@
   }
 }
 
+input[type='range']::-webkit-slider-thumb {
+  width: 5px;
+  height: 5px;
+  background-color: teal;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 5px;
+  height: 5px;
+  background-color: teal;
+}
+
 /* @keyframes slideOut {
   0% {
     opacity: 1;

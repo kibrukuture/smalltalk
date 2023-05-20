@@ -316,7 +316,7 @@ export async function getAllFriendRequestsMiddleware(req, res) {
     res.status(200).json({
       message: 'Friend request loaded successfully',
       status: 'success',
-      user: senderData,
+      user: senderData, // if senderData is undefined , send empty array.
     });
   } catch (err) {
     // !!!!!!!! catch error properly.

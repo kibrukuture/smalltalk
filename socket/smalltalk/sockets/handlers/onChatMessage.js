@@ -6,6 +6,12 @@ import { supabase } from '../../../db/index.js';
 async function onChatMessage(socket, data) {
   const { message, roomId, sender, friend } = data;
 
+  // // text: caption,
+  // sender: user,
+  // attachment: binFile,
+  // friend,
+  // roomId: currentOpenChatId,
+
   // console.log('onChatMessage', message, roomId, sender, friend);
   // check if users are friends
 

@@ -176,6 +176,9 @@ export function getInitials(name: string) {
 
 // new message, renew local rooms.
 export const addNewMessage = (roomId: string, message: Message, setRooms: (rooms: Map<string, Room>) => void) => {
+  // check if this is called twice.
+
+  console.log('add new message called');
   setRooms((prev) => {
     const newRoom = new Map<string, Room>(prev);
     const newMessages = newRoom.get(roomId)!.messages.concat(message);
@@ -183,3 +186,182 @@ export const addNewMessage = (roomId: string, message: Message, setRooms: (rooms
     return newRoom;
   });
 };
+
+export function getFileTypeColors(fileType: string) {
+  const fileColors: {
+    [key: string]: string[];
+  } = {
+    pdf: ['#FF5722', '#F44336'],
+    doc: ['#2196F3', '#1976D2'],
+    txt: ['#FF9800', '#FFC107'],
+    png: ['#4CAF50', '#8BC34A'],
+    jpg: ['#FFEB3B', '#FFC107'],
+    mp3: ['#9C27B0', '#673AB7'],
+    mp4: ['#E91E63', '#C2185B'],
+    xls: ['#00BCD4', '#009688'],
+    ppt: ['#3F51B5', '#303F9F'],
+    zip: ['#795548', '#607D8B'],
+    css: ['#FFEB3B', '#FFC107'],
+    html: ['#E91E63', '#C2185B'],
+    js: ['#4CAF50', '#8BC34A'],
+    svg: ['#9C27B0', '#673AB7'],
+    json: ['#FF5722', '#F44336'],
+    xml: ['#2196F3', '#1976D2'],
+    gif: ['#FF9800', '#FFC107'],
+    exe: ['#3F51B5', '#303F9F'],
+    pptx: ['#795548', '#607D8B'],
+    csv: ['#00BCD4', '#009688'],
+    javascript: ['#FFEB3B', '#FFC107'],
+    sql: ['#FF9800', '#FFC107'],
+    rar: ['#FF5722', '#F44336'],
+    tar: ['#2196F3', '#1976D2'],
+    tgz: ['#E91E63', '#C2185B'],
+    tif: ['#4CAF50', '#8BC34A'],
+    tiff: ['#9C27B0', '#673AB7'],
+    wav: ['#2196F3', '#1976D2'],
+    xlsx: ['#4CAF50', '#8BC34A'],
+    php: ['#FF5722', '#F44336'],
+    java: ['#2196F3', '#1976D2'],
+    py: ['#FF9800', '#FFC107'],
+    c: ['#795548', '#607D8B'],
+    cpp: ['#00BCD4', '#009688'],
+    h: ['#FFEB3B', '#FFC107'],
+    hpp: ['#E91E63', '#C2185B'],
+    cs: ['#4CAF50', '#8BC34A'],
+    cshtml: ['#9C27B0', '#673AB7'],
+    vb: ['#FF5722', '#F44336'],
+    vbhtml: ['#2196F3', '#1976D2'],
+    csproj: ['#FF9800', '#FFC107'],
+    sln: ['#3F51B5', '#303F9F'],
+    fs: ['#795548', '#607D8B'],
+    fsproj: ['#00BCD4', '#009688'],
+    fsx: ['#E91E63', '#C2185B'],
+  };
+
+  if (fileType in fileColors) {
+    return fileColors[fileType];
+  } else {
+    // Generate random colors for unsupported file types
+    const randomColor1 = '#' + Math.floor(Math.random() * 16777215).toString(16);
+    const randomColor2 = '#' + Math.floor(Math.random() * 16777215).toString(16);
+    return [randomColor1, randomColor2];
+  }
+}
+
+export function formatTime(seconds: number) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  const milliseconds = Math.floor((remainingSeconds % 1) * 1000);
+
+  const formattedHours = hours < 10 ? `0${hours}` : `${hours}`;
+  const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`;
+  const formattedSeconds = remainingSeconds < 10 ? `0${Math.floor(remainingSeconds)}` : `${Math.floor(remainingSeconds)}`;
+  const formattedMilliseconds = milliseconds < 100 ? `0${milliseconds}` : milliseconds < 10 ? `00${milliseconds}` : `${milliseconds}`;
+
+  let timeString = '';
+  if (hours > 0) {
+    timeString = `${formattedHours}:${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+  } else if (minutes > 0) {
+    timeString = `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+  } else {
+    timeString = `${formattedSeconds}.${formattedMilliseconds}`;
+  }
+
+  return timeString;
+}
+
+export function abbreviateName(longerName: string) {
+  const fileExtensionMapping: {
+    [key: string]: string;
+  } = {
+    javascript: 'js',
+    text: 'txt',
+    python: 'py',
+    html: 'html',
+    csv: 'csv',
+    xml: 'xml',
+    json: 'json',
+    doc: 'doc',
+    docx: 'docx',
+    xls: 'xls',
+    xlsx: 'xlsx',
+    ppt: 'ppt',
+    pptx: 'pptx',
+    pdf: 'pdf',
+    jpg: 'jpg',
+    png: 'png',
+    gif: 'gif',
+    bmp: 'bmp',
+    mp3: 'mp3',
+    wav: 'wav',
+    php: 'php',
+    java: 'java',
+    css: 'css',
+    sass: 'sass',
+    scss: 'scss',
+    rb: 'rb',
+    go: 'go',
+    exe: 'exe',
+    zip: 'zip',
+    rar: 'rar',
+    sh: 'sh',
+    txt: 'txt',
+    ini: 'ini',
+    log: 'log',
+    svg: 'svg',
+    jsx: 'jsx',
+    ts: 'ts',
+    cpp: 'cpp',
+    h: 'h',
+    md: 'md',
+    sql: 'sql',
+    'x-zip-compressed': 'zip',
+    'x-zip': 'zip',
+    'x-rar-compressed': 'rar',
+    'x-rar': 'rar',
+    'x-7z-compressed': '7z',
+    'x-7z': '7z',
+    'x-tar': 'tar',
+    'x-gzip': 'gz',
+    'x-bzip2': 'bz2',
+    'x-bzip': 'bz',
+    'x-xz': 'xz',
+    'x-lzip': 'lz',
+    'x-lzma': 'lzma',
+    'x-lzop': 'lzo',
+    'x-lrzip': 'lrz',
+    'x-lz4': 'lz4',
+    'x-zstandard': 'zst',
+    'x-java-archive': 'jar',
+    'x-sharedlib': 'so',
+    'x-object': 'o',
+    'x-executable': 'exe',
+    'x-ms-dos-executable': 'exe',
+    'x-mach-binary': 'exe',
+    'x-archive': 'a',
+    'x-deb': 'deb',
+    'x-rpm': 'rpm',
+    'x-msi': 'msi',
+    'x-appimage': 'appimage',
+    'x-nintendo-nes-rom': 'nes',
+    'x-nintendo-snes-rom': 'sfc',
+    'x-nintendo-64-rom': 'n64',
+    'x-nintendo-gamecube-rom': 'iso',
+    'x-nintendo-wii-rom': 'iso',
+    'x-sega-genesis-rom': 'smd',
+  };
+  return fileExtensionMapping[longerName.toLocaleLowerCase().trim()] || longerName;
+}
+
+export function formatFileSize(size: number) {
+  if (size < 1024) {
+    return size + ' bytes';
+  } else if (size < 1024 * 1024) {
+    return (size / 1024).toFixed(2) + ' KB';
+  } else if (size < 1024 * 1024 * 1024) {
+    return (size / (1024 * 1024)).toFixed(2) + ' MB';
+  } else {
+    return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  }
+}

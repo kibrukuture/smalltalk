@@ -11,6 +11,7 @@ import Notificstion from '@/components/Notification';
 import Settings from '@/components/Settings';
 import { useRouter } from 'next/navigation';
 import { addNewMessage } from '../util.fns';
+import Calling from '@/components/Calling';
 
 // select tab
 const tab: any = {
@@ -21,7 +22,7 @@ const tab: any = {
 };
 
 export default function Chat() {
-  const [currentInnerWidth, setCurrentInnerWidth] = useState<number>(window.innerWidth);
+  const [currentInnerWidth, setCurrentInnerWidth] = useState<number>(0);
   //consume context
   const { rooms, isChatRoomTapped, setRooms, currentOpenChatId, setCurrentOpenChatId, typing, setTyping, setIsAllChatsLoading, isAllChatsLoading, setUser, user, barCurrentTab, setFriendRequests, friendRequests, setIsUserNotAbleToSendFriendRequest } = useContext(ChatContext);
 
@@ -35,12 +36,16 @@ export default function Chat() {
     // on reload set user data.
     setUser(JSON.parse(localStorage.getItem('user') as string));
 
-    // listen to window resize.
-    const onResize = () => {
-      setCurrentInnerWidth(window.innerWidth);
-    };
-    window.addEventListener('resize', onResize);
-
+    // only run in browser.
+    let onResize;
+    if (typeof window !== 'undefined') {
+      setCurrentInnerWidth(window.innerWidth); // set current inner width.
+      // listen to window resize.
+      onResize = () => {
+        setCurrentInnerWidth(window.innerWidth);
+      };
+      window.addEventListener('resize', onResize);
+    }
     // load all chats.
     setIsAllChatsLoading(true);
     fetch(`http://localhost:4040/api/loadchats/${JSON.parse(localStorage.getItem('user') as string).userId}`, {
@@ -247,7 +252,7 @@ export default function Chat() {
   //   console.log('user:connected', data);
   // });
 
-  console.log(':Component Rendered:', rooms);
+  console.log(':Component Rendered:', '# of rooms are: ', rooms.get(currentOpenChatId)?.messages.length);
   if (!rooms.size && isAllChatsLoading) return <div className='h-screen w-full bg-black flex items-center justify-center text-skin-base text-2xl font-bold text-center  '>loading</div>;
 
   return (
@@ -263,6 +268,8 @@ export default function Chat() {
       {currentInnerWidth <= 768 && isChatRoomTapped && <ChatBox />}
       {false && <UserDetail />}
       <audio ref={notificationRef} src='/sound-effects/notification.wav' />
+
+      {false && <Calling />}
     </div>
   );
 }
@@ -365,3 +372,8 @@ link:{
  }
 }
 */
+
+// // Create an SDP offer
+// peerConnection.createOffer()
+//   .then((offer) => peerConnection.setLocalDescription(offer))
+//   .catch((error) => console.error(error));

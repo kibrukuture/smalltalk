@@ -13,10 +13,12 @@ export default function Bar() {
   const router = useRouter();
 
   useEffect(() => {
-    setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', () => {
+    if (typeof window !== 'undefined') {
       setWindowWidth(window.innerWidth);
-    });
+      window.addEventListener('resize', () => {
+        setWindowWidth(window.innerWidth);
+      });
+    }
   }, []);
 
   const onUserSignOut = () => {
