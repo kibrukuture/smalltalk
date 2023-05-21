@@ -21,6 +21,7 @@ export default function Conversation({ message, friend }: { message: Message; fr
 
   let AttachmentFile;
   if (message.attachment) {
+    console.log('*************************', message.attachment?.type?.toLocaleUpperCase());
     switch (message.attachment.type) {
       case 'audio':
         AttachmentFile = <AudioFile attachment={message.attachment} />;
@@ -36,54 +37,6 @@ export default function Conversation({ message, friend }: { message: Message; fr
         break;
     }
   }
-
-  //state
-  // const [showMenu, setShowMenu] = useState(false),
-  //   [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 }),
-  //   menuRef = useRef(null);
-
-  //handlers
-  // const onContextMenu = (event: any) => {
-  //   event.preventDefault();
-  //   setShowMenu(true);
-  //   setMenuPosition({ x: event.clientX, y: event.clientY });
-  // };
-
-  // const onMenuClose = () => {
-  //   setShowMenu(false);
-  // };
-
-  // useEffect(() => {
-  //   if (showMenu) {
-  //     const menuWidth = menuRef.current.offsetWidth;
-  //     const menuHeight = menuRef.current.offsetHeight;
-  //     const screenWidth = window.innerWidth;
-  //     const screenHeight = window.innerHeight;
-
-  //     let x = menuPosition.x;
-  //     let y = menuPosition.y;
-
-  //     if (x + menuWidth > screenWidth) {
-  //       x -= menuWidth;
-  //     }
-
-  //     if (y + menuHeight > screenHeight) {
-  //       y -= menuHeight;
-  //     }
-
-  //     setMenuPosition({ x, y });
-  //   }
-  // }, [showMenu]);
-
-  // const longPressProps = useLongPress({
-  //   onClick: (ev) => {
-  //     /*console.log('on click', ev.button, ev.shiftKey)*/
-  //     setShowMenu(false);
-  //   },
-  //   onLongPress: (ev) => {
-  //     setShowMenu(true);
-  //   },
-  // });
 
   console.log('inside conversation: ', message.text);
   return (
@@ -134,7 +87,7 @@ export default function Conversation({ message, friend }: { message: Message; fr
 
       <div className='z-50'>
         <ContextMenu id={message.messageId}>
-          <ContextMenuList />
+          <ContextMenuList message={message} />
         </ContextMenu>
       </div>
     </div>
@@ -142,7 +95,8 @@ export default function Conversation({ message, friend }: { message: Message; fr
 }
 
 const emojis = ['😀', '😂', '😍', '🤔', '🤯', '👍', '👎', '👀', '🙌', '👏', '🔥', '💩', '🌈', '🍕', '🍔', '🍟', '🍩', '🍦', '🍭', '🍫'];
-export const ContextMenuList = () => {
+export const ContextMenuList = ({ message }: { message: Message }) => {
+  const [copyText, setCopyText] = useState('');
   return (
     <div className='h-36   flex   gap-sm max-w-fit items-start font-mono text-skin-base text-sm z-50    '>
       <div className='choose-emoji-scroll-bar bg-skin-muted p-sm h-36  overflow-y-auto flex flex-col   items-center gap-xs rounded-xl   '>
@@ -161,12 +115,14 @@ export const ContextMenuList = () => {
             <span>Reply</span>
           </button>
         </MenuItem>
-        <MenuItem data={{ copy: 'copy' }} onClick={console.log} className='grow'>
+
+        <MenuItem data={{ copy: 'copy' }} onClick={() => updateClipboard(message.text + (message.attachment ? message.attachment?.name : ''))} className='grow'>
           <button className='flex h-full  w-full items-center hover:bg-skin-hover grow px-md gap-md'>
             <RiFileCopy2Line />
             <span>Copy</span>
           </button>
         </MenuItem>
+
         <MenuItem data={{ forward: 'forward' }} onClick={console.log} className='grow'>
           <button className='flex h-full  w-full items-center hover:bg-skin-hover grow px-md gap-md'>
             <RiShareForward2Line />
@@ -183,6 +139,13 @@ export const ContextMenuList = () => {
     </div>
   );
 };
+
+function updateClipboard(newClip: string) {
+  navigator.clipboard.writeText(newClip).then(
+    () => {}, //success
+    () => {}, //todo:handle error
+  );
+}
 
 function linkify(text: string) {
   const urlRegex = /(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?/;

@@ -73,6 +73,7 @@ export default function Attachment({ setShowAttachment, setBinFile, setShowBinar
 
     setShowAttachment(false);
   };
+
   return (
     <div ref={ref} className='bg-skin-muted text-skin-base absolute transform -translate-y-full -translate-x-1/2  right-0 rounded-md flex flex-col '>
       <button onClick={(e) => onAttachment(e, 'photovideoaudio')} className='rounded-md flex items-center gap-sm p-md hover:bg-teal-300 w-full'>
@@ -83,6 +84,7 @@ export default function Attachment({ setShowAttachment, setBinFile, setShowBinar
         <RiFileLine />
         <p>Document</p>
       </button>
+
       {/* invisible input type of file */}
       <input ref={binaryFileFromLocalFs} type='file' name='file' id='file' className='invisible w-0 h-0' />
     </div>

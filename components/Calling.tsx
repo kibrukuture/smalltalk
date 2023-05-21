@@ -23,7 +23,7 @@ export default function Calling({ remotePeer, setShowAnsweringVideoCall, setRemo
       isCalling: false,
     }));
 
-    // close the remote peer video stream
+    //
     socket.emit('VideoCallingAccepted', {
       roomId: remotePeer.roomId,
       callingPeer: remotePeer.peer,

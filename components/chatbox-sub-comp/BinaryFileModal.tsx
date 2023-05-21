@@ -85,7 +85,8 @@ export default function BinaryFileModal({ binFile, setShowBinaryFileModal }: { b
   console.log('binary file', binFile);
   return (
     <div className='flex items-center justify-center  fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 font-mono'>
-      <div className='p-md max-h-[50%]   bg-skin-muted rounded-md flex flex-col gap-sm w-[80%] md:w-[50%] lg:w-[30%]'>
+      <div className='p-md    bg-skin-muted rounded-md flex flex-col gap-sm w-[80%] md:w-[50%] lg:w-[30%]'>
+        {/* header */}
         <div className='flex gap-md items-center'>
           <button onClick={() => setShowBinaryFileModal(false)} className='p-md '>
             <RiCloseFill size={20} />
@@ -94,14 +95,14 @@ export default function BinaryFileModal({ binFile, setShowBinaryFileModal }: { b
         </div>
         {/* image type*/}
         {binFile.type === 'image' && (
-          <div className='h-full'>
-            <div className='  '>
-              <img src={binFile.data} alt='' />
+          <>
+            <div className='max-h-9/12 h-9/12 overflow-hidden'>
+              <img src={binFile.data} alt='' className=' w-full min-w-full object-cover' />
             </div>
             <div className='flex gap-xs items-center text-xs text-skin-muted mt-1'>
               <span>{binFile.name} </span> &bull;<span>{formatFileSize(binFile.size)}</span>
             </div>
-          </div>
+          </>
         )}
         {/* audio type. */}
         {binFile.type === 'audio' && (
@@ -122,7 +123,9 @@ export default function BinaryFileModal({ binFile, setShowBinaryFileModal }: { b
         {/* vidoe type */}
         {binFile.type === 'video' && (
           <div className='flex flex-col  gap-xs items-center overflow-hidden '>
-            <video className='w-full ' ref={vidRef} src={binFile.data}></video>
+            <div className=' h-[95%] max-h-[95%] '>
+              <video className='w-full h-full object-cover' ref={vidRef} src={binFile.data} />
+            </div>
             <div className='flex items-center gap-xs text-xs text-skin-muted'>
               <span>{formatTime(binFile.dur!)}</span> &bull;<span>{formatFileSize(binFile.size)}</span>
             </div>
