@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { RiPlayFill } from 'react-icons/ri';
 import { Attachment } from '@/app/ChatContext';
 import { formatFileSize, formatTime } from '@/app/util.fns';
-import ReactPlayer from 'react-player/lazy';
 
 export default function VideoFile({ attachment }: { attachment: Attachment }) {
   const vidRef = useRef(null);

@@ -11,8 +11,30 @@ import ImageFile from './chatbox-sub-comp/attachment-related/ImageFile';
 import VideoFile from './chatbox-sub-comp/attachment-related/VideoFile';
 import DocumentFile from './chatbox-sub-comp/attachment-related/DocumentFile';
 import { ContextMenu, MenuItem, ContextMenuTrigger } from 'react-contextmenu';
+// import ImageViewer from './ImageViewer';
 
-export default function Conversation({ message, friend }: { message: Message; friend: User }) {
+/**
+ React.Dispatch<React.SetStateAction<{
+    show: boolean;
+    attachment: Attachment;
+    user: User;
+}>>
+ */
+export default function Conversation({
+  message,
+  friend,
+  setImageViewer,
+}: {
+  message: Message;
+  friend: User;
+  setImageViewer: React.Dispatch<
+    React.SetStateAction<{
+      show: boolean;
+      attachment: Attachment;
+      user: User;
+    }>
+  >;
+}) {
   const user = JSON.parse(localStorage.getItem('user') as string) as User;
 
   const isFromMe = message.senderId === user.userId;
@@ -27,7 +49,7 @@ export default function Conversation({ message, friend }: { message: Message; fr
         AttachmentFile = <AudioFile attachment={message.attachment} />;
         break;
       case 'image':
-        AttachmentFile = <ImageFile attachment={message.attachment} />;
+        AttachmentFile = <ImageFile user={messageBelongsTo} attachment={message.attachment} setImageViewer={setImageViewer} />;
         break;
       case 'video':
         AttachmentFile = <VideoFile attachment={message.attachment} />;

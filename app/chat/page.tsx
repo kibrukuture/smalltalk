@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useContext, useRef, useState } from 'react';
-import { ChatContext, LastSeen } from '../ChatContext';
+import { ChatContext } from '../ChatContext';
 import ChatBox from '@/components/ChatBox';
 import Bar from '@/components/Bar';
 import ConversationBox from '@/components/ConversationBox';

@@ -5,11 +5,10 @@ import { RiVidiconFill, RiImageLine, RiFileLine, RiArrowGoBackFill, RiAttachment
 import { BsEmojiLaughingFill } from 'react-icons/bs';
 import Conversation from './Conversation';
 import socket from '@/app/socket.config';
-import Link from 'next/link';
+import Attachment from './chatbox-sub-comp/Attachment';
 import { formatAmPm } from '@/app/util.fns';
 import ThreeDotAnimation from './chatbox-sub-comp/TypingAnim';
 import { v4 as uuidv4 } from 'uuid';
-import Attachment from './chatbox-sub-comp/Attachment';
 import BinaryFileModal from './chatbox-sub-comp/BinaryFileModal';
 import BinFileLoading from './chatbox-sub-comp/BinFileLoadig';
 import { addNewMessage } from '@/app/util.fns';
@@ -23,6 +22,7 @@ import NoChatSelected from './NoChatSelected';
 import Calling from './Calling';
 import Timer from './Timer';
 import CapturePicture from './CapturePicture';
+import ImageViewer from './ImageViewer';
 // import { formatTime } from '@/app/util.fns';
 import Peer from 'peerjs';
 
@@ -43,6 +43,11 @@ export default function ChatBox() {
   const [audioRecorder, setAudioRecorder] = useState<MediaRecorder | null>(null);
   const [audioStream, setAudioStream] = useState<MediaStream>();
   const [showCapturePicture, setShowCapturePicture] = useState(false);
+  const [imageViewer, setImageViewer] = useState({
+    show: false,
+    attachment: {},
+    user: {} as User,
+  });
 
   const [remotePeerVideoCalling, setRemotePeerVideoCalling] = useState({
     isCalling: false,
@@ -266,6 +271,7 @@ export default function ChatBox() {
   return (
     <div ref={chatBoxRef} className='flex flex-col max-h-screen h-screen w-full '>
       {remotePeerVideoCalling.isCalling && <Calling remotePeer={remotePeerVideoCalling} setShowAnsweringVideoCall={setShowAnsweringVideoCall} setRemotePeerVideoCalling={setRemotePeerVideoCalling} />}
+      {imageViewer.show && <ImageViewer imageViewer={imageViewer} setImageViewer={setImageViewer} />}
       {false && <audio ref={outGoingCallAudioRef} loop={true} src='/sound-effects/caller.wav' preload='auto' />}
       <div className='flex items-center   '>
         {/* arrow back button   */}
@@ -340,7 +346,7 @@ export default function ChatBox() {
                       </p>
                     </div>
                   );
-                return <Conversation key={message.messageId} friend={currentRoom.friend} message={message} />;
+                return <Conversation key={message.messageId} friend={currentRoom.friend} message={message} setImageViewer={setImageViewer} />;
               })}
           </div>
           <ChatBoxContextMenu />
