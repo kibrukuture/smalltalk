@@ -5,6 +5,7 @@ import signUpRouter from './signup/index.js';
 import searchRouter from './search/index.js';
 import userRouter from './user/index.js';
 import chatLoadRouter from './dataloader/index.js';
+import openGraphScrapperRouter from './opengraphscrapper/index.js';
 import bodyParser from 'body-parser';
 
 export const app = express();
@@ -33,6 +34,7 @@ app.use('/signup', signUpRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/user', userRouter);
 app.use('/api/loadchats', chatLoadRouter);
+app.use('/api/opengraphscrapper', openGraphScrapperRouter);
 
 // clients++;
 // // io.sockets.emit('broadcast', { description: clients + ' clients connected!' });

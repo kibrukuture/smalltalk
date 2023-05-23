@@ -134,7 +134,7 @@ export default function BinaryFileModal({ binFile, setShowBinaryFileModal }: { b
 
         {/* file type such as pdf , text,  */}
         {binFile.type === 'document' && (
-          <div className='  '>
+          <div className=''>
             <div className='flex gap-xs items-center'>
               <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50' width='50' height='50'>
                 <path d='M10 5 L40 5 L45 10 L45 40 L5 40 L5 10 Z' fill={`${getFileTypeColors(binFile.ext)[0]}`} />

@@ -95,6 +95,16 @@ input[type='range']::-moz-range-thumb {
   background-color: teal;
 }
 
+@keyframes heartbit {
+  0% {
+    /* background-color: #c3cdd3;  */
+    background-color: #e2f2e2;
+  }
+  100% {
+    background-color: #c8e7c8;
+  }
+}
+
 /* @keyframes slideOut {
   0% {
     opacity: 1;

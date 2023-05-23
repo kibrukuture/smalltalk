@@ -22,7 +22,7 @@ export default function ImageViewer({
   >;
   user: User;
 }) {
-  const [currentZoomLevel, setCurrentZoomLevel] = useState<number>(0.7);
+  const [currentZoomLevel, setCurrentZoomLevel] = useState<number>(1);
   const imageRef = useRef<HTMLImageElement>(null);
 
   const onZoom = (type: string) => {
@@ -51,7 +51,7 @@ export default function ImageViewer({
     >
       {/* header */}
       <div className='absolute top-0 left-0 w-full h-[50px] bg-skin-base z-10 flex items-center justify-between p-lg gap-sm '>
-        <div className=' flex items-center text-black font-mono gap-2'>
+        <div className=' flex items-center text-skin-base font-mono gap-2'>
           <div className='relative'>
             <div className='relative overflow-hidden text-skin-muted w-8 h-8 shadow-default flex items-center justify-center   rounded-full '>
               <img className='object-cover h-12 w-12 ' src={imageViewer.user.avatarUrl} alt='' />

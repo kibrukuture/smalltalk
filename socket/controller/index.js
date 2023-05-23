@@ -1,4 +1,5 @@
 import { supabase } from '../db/index.js';
+import ogs from 'open-graph-scraper';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -290,42 +291,35 @@ export async function deleteUserAccountMiddleware(req, res) {
 }
 
 export async function getAllFriendRequestsMiddleware(req, res) {
-  try {
-    const { userId } = req.params;
+  const { userId } = req.params;
 
-    const { data: friendRequestData, error: friendRequestError } = await supabase.from('privateroom').select('*').eq('accepted', false).eq('inactive', false).or(`userOneId.eq.${userId},userTwoId.eq.${userId}`);
+  const { data: friendRequestData, error: friendRequestError } = await supabase.from('privateroom').select('*').eq('accepted', false).eq('inactive', false).or(`userOneId.eq.${userId},userTwoId.eq.${userId}`);
 
-    if (friendRequestError) {
-      return res.status(401).json({
-        message: friendRequestError.message,
-        status: 'error',
-      });
-    }
-    const senderIds = friendRequestData.map((item) => (userId === item.userOneId ? item.userTwoId : item.userOneId));
-
-    // get  the all senders
-    const { data: senderData, error: senderError } = await supabase.from('user').select('*').in('userId', senderIds);
-
-    if (senderError) {
-      return res.status(401).json({
-        message: senderError.message,
-        status: 'error',
-      });
-    }
-
-    res.status(200).json({
-      message: 'Friend request loaded successfully',
-      status: 'success',
-      user: senderData, // if senderData is undefined , send empty array.
-    });
-  } catch (err) {
-    // !!!!!!!! catch error properly.
-    res.status(200).json({
-      message: 'bad request',
+  if (friendRequestError) {
+    return res.status(401).json({
+      message: friendRequestError.message,
       status: 'error',
       user: [],
     });
   }
+  const senderIds = friendRequestData.map((item) => (userId === item.userOneId ? item.userTwoId : item.userOneId));
+
+  // get  the all senders
+  const { data: senderData, error: senderError } = await supabase.from('user').select('*').in('userId', senderIds);
+
+  if (senderError) {
+    return res.status(401).json({
+      message: senderError.message,
+      status: 'error',
+      user: [],
+    });
+  }
+
+  res.status(200).json({
+    message: 'Friend request loaded successfully',
+    status: 'success',
+    user: senderData, // if senderData is undefined , send empty array.
+  });
 }
 
 export async function acceptDeclineRequestMiddleware(req, res) {
@@ -449,4 +443,31 @@ export async function getUserProfileMiddleware(req, res) {
     status: 'success',
     data: userData[0],
   });
+}
+
+export async function scrapWebsite(req, res) {
+  try {
+    if (!req.query.url) throw new Error('No Link is provided');
+    const options = { url: req.query.url };
+
+    const ogsRes = await ogs(options);
+
+    const { error, result } = ogsRes;
+
+    if (error) throw new Error(error);
+
+    console.log(result);
+    res.status(200).json({
+      message: 'Scrapped website successfully',
+      status: 'ok',
+      data: result,
+    });
+  } catch (e) {
+    // web scrap failed.
+    res.status(500).json({
+      message: e.message,
+      status: 'error',
+      data: [],
+    });
+  }
 }

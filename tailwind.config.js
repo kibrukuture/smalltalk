@@ -101,6 +101,16 @@ export default {
         lg: '3',
         xl: '4',
       },
+      animation: {
+        animatedBox: 'animatedBox 1s ease-in-out infinite alternate',
+      },
+
+      keyframes: {
+        animatedBox: {
+          '0%': { backgroundColor: 'red' },
+          '100%': { backgroundColor: 'green' },
+        },
+      },
     },
 
     plugins: [],
@@ -112,6 +122,7 @@ export default {
 //   'gradient-conic':
 //     'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
 // },
+//2s infinite alternate
 // textColor: {
 //   skin: {
 //     base: 'var(--color-text-base)',
@@ -119,3 +130,14 @@ export default {
 //     inverse: 'var(--color-text-inverse)',
 //   },
 // },
+
+/*@keyframes animatedBox {
+  0% {
+    background-color: #c3cdd3;
+  }
+  100% {
+    background-color: #c8e7c8;
+  }
+}
+
+*/

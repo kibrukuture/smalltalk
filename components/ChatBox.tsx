@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { ChatContext, Message, Room, BinFile, User } from '@/app/ChatContext';
-import { RiVidiconFill, RiImageLine, RiFileLine, RiArrowGoBackFill, RiAttachmentLine, RiPhoneFill, RiMore2Fill, RiSendPlaneFill, RiLock2Fill, RiMic2Line, RiDeleteBin6Line, RiDeleteBin6Fill, RiCamera3Line } from 'react-icons/ri';
+import { ChatContext, Message, Room, BinFile, User, Link } from '@/app/ChatContext';
+import { RiVidiconFill, RiImageLine, RiFileLine, RiArrowGoBackFill, RiAttachmentLine, RiPhoneFill, RiMore2Fill, RiSendPlaneFill, RiLock2Fill, RiMic2Line, RiDeleteBin6Line, RiDeleteBin6Fill, RiCamera3Line, RiLink } from 'react-icons/ri';
 import { BsEmojiLaughingFill } from 'react-icons/bs';
 import Conversation from './Conversation';
 import socket from '@/app/socket.config';
@@ -11,7 +11,7 @@ import ThreeDotAnimation from './chatbox-sub-comp/TypingAnim';
 import { v4 as uuidv4 } from 'uuid';
 import BinaryFileModal from './chatbox-sub-comp/BinaryFileModal';
 import BinFileLoading from './chatbox-sub-comp/BinFileLoadig';
-import { addNewMessage } from '@/app/util.fns';
+import { addNewMessage, scrapWebsite } from '@/app/util.fns';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { ContextMenuTrigger } from 'react-contextmenu';
@@ -23,6 +23,8 @@ import Calling from './Calling';
 import Timer from './Timer';
 import CapturePicture from './CapturePicture';
 import ImageViewer from './ImageViewer';
+import ReplyMessage from './ReplyMessage';
+import * as linkify from 'linkifyjs';
 // import { formatTime } from '@/app/util.fns';
 import Peer from 'peerjs';
 
@@ -32,6 +34,10 @@ export default function ChatBox() {
   // state
   const [showAttachment, setShowAttachment] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
+  const [linkInMessage, setLinkInMessage] = useState({
+    isAny: false,
+    url: '',
+  });
   const [showBinaryFileModal, setShowBinaryFileModal] = useState(false);
   const [binFile, setBinFile] = useState({} as BinFile);
   const [binFileLoading, setBinFileLoading] = useState(false);
@@ -43,6 +49,15 @@ export default function ChatBox() {
   const [audioRecorder, setAudioRecorder] = useState<MediaRecorder | null>(null);
   const [audioStream, setAudioStream] = useState<MediaStream>();
   const [showCapturePicture, setShowCapturePicture] = useState(false);
+  const [repliedMessageClicked, setRepliedMessageClicked] = useState({
+    messageId: '',
+    isClicked: false,
+  });
+  const [replyMessage, setReplyMessage] = useState({
+    show: false,
+    message: {} as Message,
+  });
+
   const [imageViewer, setImageViewer] = useState({
     show: false,
     attachment: {},
@@ -149,6 +164,38 @@ export default function ChatBox() {
       await stopPromise;
     }
     console.log(':4:');
+
+    let embedLink: Link | null = null;
+    if (linkInMessage.isAny) {
+      const { data, status } = await scrapWebsite(linkInMessage.url);
+
+      if (status === 'ok') {
+        const { ogSiteName, ogUrl, ogTitle, ogDescription, ogType, ogImage, ogDate } = data;
+
+        const image = ogImage[0];
+        embedLink = {
+          messageId,
+          siteName: ogSiteName || '',
+          url: ogUrl || '',
+          title: ogTitle || '',
+          description: ogDescription || '',
+          type: ogType || 'Website',
+          imageUrl: image && image.url,
+          date: ogDate || '',
+          imageHeight: image && image.height,
+          imageWidth: image && image.width,
+        };
+      }
+    }
+
+    let reply = null,
+      replyId = null;
+    if (replyMessage.show) {
+      reply = replyMessage.message;
+      replyId = replyMessage.message.messageId;
+    }
+
+    console.log(embedLink);
     const message: Message = {
       messageId,
       roomId: currentOpenChatId,
@@ -156,10 +203,10 @@ export default function ChatBox() {
       text: chatMessage,
       createdAt: new Date().toISOString(),
       updatedAt: null,
-      message: [],
-      replyId: null,
+      message: reply,
+      replyId,
       emoji: '',
-      link: null,
+      link: embedLink,
       attachment: tempAttachment,
     };
 
@@ -185,10 +232,36 @@ export default function ChatBox() {
       setAudioRecorder(null);
       audioStream && audioStream.getTracks().forEach((track) => track.stop());
     }
+
+    // reset
+    setLinkInMessage({
+      isAny: false,
+      url: '',
+    });
+
+    // reset reply message
+    setReplyMessage({
+      show: false,
+      message: {} as Message,
+    });
   };
 
   const onMessageInputField = (e: any) => {
-    setChatMessage(e.target.value);
+    const { value } = e.target;
+
+    setChatMessage(value);
+    // there is a link.
+    const links = linkify.find(value);
+    const isFound = !!links.length;
+    isFound
+      ? setLinkInMessage({
+          isAny: isFound,
+          url: links[0].href,
+        })
+      : setLinkInMessage({
+          isAny: false,
+          url: '',
+        });
   };
 
   const onVideoCallDisplayUserMedia = (val: boolean) => {
@@ -315,7 +388,7 @@ export default function ChatBox() {
         </header>
       </div>
 
-      <div className='grow relative overflow-y-auto'>
+      <div className='grow relative overflow-y-auto scroll-smooth'>
         {showCapturePicture && <CapturePicture setShowCapturePicture={setShowCapturePicture} onGetCapturePicture={onGetCapturePicture} />}
         <ContextMenuTrigger id={currentOpenChatId} className='grow'>
           <div
@@ -346,7 +419,7 @@ export default function ChatBox() {
                       </p>
                     </div>
                   );
-                return <Conversation key={message.messageId} friend={currentRoom.friend} message={message} setImageViewer={setImageViewer} />;
+                return <Conversation repliedMessageClicked={repliedMessageClicked} setRepliedMessageClicked={setRepliedMessageClicked} setReplyMessage={setReplyMessage} key={message.messageId} friend={currentRoom.friend} message={message} setImageViewer={setImageViewer} />;
               })}
           </div>
           <ChatBoxContextMenu />
@@ -362,6 +435,13 @@ export default function ChatBox() {
             <Picker data={data} onEmojiSelect={(emoji: any) => setChatMessage(chatMessage + emoji.native)} onClickOutside={() => setShowEmojiPicker(false)} theme='light' />
           </div>
         )}
+        {linkInMessage.isAny && (
+          <div className='p-md flex items-center gap-sm border-0 border-l-4 border-black font-mono text-xs'>
+            <RiLink />
+            <span>{linkInMessage.url}</span>
+          </div>
+        )}
+        {replyMessage.show && <ReplyMessage setRepliedMessageClicked={setRepliedMessageClicked} message={replyMessage.message} setReplyMessage={setReplyMessage} />}
         <form onSubmit={onChatMessageSend} className='flex gap-xs items-center text-skin-muted rounded p-md z-10'>
           <div className='flex items-center  basis-0 shrink grow bg-black p-md rounded'>
             {
@@ -369,7 +449,7 @@ export default function ChatBox() {
                 <BsEmojiLaughingFill />
               </button>
             }
-            <input disabled={isAudioBeingRecorded} onChange={onMessageInputField} value={chatMessage} placeholder='Message' className='block w-0 grow outline-none border-none p-md bg-black text-skin-muted pl-lg font-mono' type='text' />
+            <input type='text' disabled={isAudioBeingRecorded} onChange={onMessageInputField} value={chatMessage} placeholder='Message' className='resize-none block w-0 grow outline-none border-none p-md bg-black text-skin-muted pl-lg font-mono whitespace-pre-wrap ' />
             <div className=''>
               {showAttachment && <Attachment setBinFileLoading={setBinFileLoading} setShowAttachment={setShowAttachment} setBinFile={setBinFile} setShowBinaryFileModal={setShowBinaryFileModal} />}
 

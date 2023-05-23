@@ -7,6 +7,7 @@ export function formatAmPm(timestamp: string | number | Date) {
 }
 
 export function distanceToNow(timestamp: string | number | Date) {
+  if (!timestamp) return 'Date Unknown';
   const date = new Date(timestamp);
   return formatDistanceToNow(date, { addSuffix: true });
 }
@@ -236,6 +237,8 @@ export function getFileTypeColors(fileType: string) {
     fs: ['#795548', '#607D8B'],
     fsproj: ['#00BCD4', '#009688'],
     fsx: ['#E91E63', '#C2185B'],
+    fsxproj: ['#4CAF50', '#8BC34A'],
+    plain: ['#FFEB3B', '#FFC107'],
   };
 
   if (fileType in fileColors) {
@@ -316,6 +319,7 @@ export function abbreviateName(longerName: string) {
     h: 'h',
     md: 'md',
     sql: 'sql',
+    plain: 'txt',
     'x-zip-compressed': 'zip',
     'x-zip': 'zip',
     'x-rar-compressed': 'rar',
@@ -350,6 +354,7 @@ export function abbreviateName(longerName: string) {
     'x-nintendo-gamecube-rom': 'iso',
     'x-nintendo-wii-rom': 'iso',
     'x-sega-genesis-rom': 'smd',
+    mp3: 'mp3',
   };
   return fileExtensionMapping[longerName.toLocaleLowerCase().trim()] || longerName;
 }
@@ -364,4 +369,13 @@ export function formatFileSize(size: number) {
   } else {
     return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
   }
+}
+
+// /api/opengraphscrapper
+export async function scrapWebsite(url: string) {
+  const response = await fetch(`http://localhost:4040/api/opengraphscrapper/?url=${url}`, {
+    method: 'GET',
+  });
+  const data = await response.json();
+  return data;
 }
