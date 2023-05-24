@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback } from 'react';
-import { RiLinksFill, RiLink, RiCheckDoubleLine, RiDeleteBinLine, RiCheckLine, RiReplyLine, RiFileCopy2Line, RiShareForward2Line } from 'react-icons/ri';
-import { formatAmPm } from '@/app/util.fns';
-import { Message, User, Attachment, BinFile } from '@/app/ChatContext';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { RiAddFill, RiLink, RiCheckDoubleLine, RiDeleteBinLine, RiCheckLine, RiReplyLine, RiFileCopy2Line, RiShareForward2Line } from 'react-icons/ri';
+import { formatAmPm, getColorFromName, getInitials } from '@/app/util.fns';
+import { Message, User, Attachment, EmojiType, Room } from '@/app/ChatContext';
 import { distanceToNow } from '@/app/util.fns';
-import { getColorFromName, getInitials } from '@/app/util.fns';
+import { ChatContext } from '@/app/ChatContext';
 import Link from 'next/link';
 import AudioFile from './chatbox-sub-comp/attachment-related/AudioFile';
 import ImageFile from './chatbox-sub-comp/attachment-related/ImageFile';
@@ -21,6 +21,7 @@ import RepliedMessage from './RepliedMessage';
     user: User;
 }>>
  */
+
 export default function Conversation({
   message,
   friend,
@@ -28,6 +29,7 @@ export default function Conversation({
   setImageViewer,
   setReplyMessage,
   setRepliedMessageClicked,
+  setForwardMessage,
 }: {
   message: Message;
   friend: User;
@@ -54,16 +56,32 @@ export default function Conversation({
       isClicked: boolean;
     }>
   >;
+  setForwardMessage: React.Dispatch<
+    React.SetStateAction<{
+      show: boolean;
+      message: Message;
+      to: string[];
+    }>
+  >;
 }) {
   const user = JSON.parse(localStorage.getItem('user') as string) as User;
+  // consume context
+
+  const { rooms, currentOpenChatId, setRooms } = useContext(ChatContext);
 
   const isFromMe = message.senderId === user.userId;
 
   const messageBelongsTo = isFromMe ? user : friend;
 
+  let emojiBelongsto: User | null = null,
+    emojiAvatarcolor = '';
+  if (message.emoji) {
+    emojiBelongsto = message.emoji.userId === user.userId ? user : friend;
+    emojiAvatarcolor = getColorFromName(emojiBelongsto!.name);
+  }
+
   let AttachmentFile;
   if (message.attachment) {
-    console.log('*************************', message.attachment?.type?.toLocaleUpperCase());
     switch (message.attachment.type) {
       case 'audio':
         AttachmentFile = <AudioFile attachment={message.attachment} />;
@@ -80,13 +98,18 @@ export default function Conversation({
     }
   }
 
-  console.log('repliedMessageClicked.isClicked: ', repliedMessageClicked, repliedMessageClicked.isClicked && repliedMessageClicked.messageId === message.messageId);
+  // handles
+  const onRemoveEmoji = () => {
+    updateMessageWithEmoji(null, message, rooms, currentOpenChatId, setRooms);
+    // also remove from the other users
+  };
+
   return (
-    <div className={`w-full flex ${repliedMessageClicked.isClicked && repliedMessageClicked.messageId === message.messageId && 'animate-[heartbit_1s_ease-in-out_infinite]'}`}>
+    <div className={`w-full flex ${repliedMessageClicked.isClicked && repliedMessageClicked.messageId === message.messageId && 'animate-[heartbit_3s_alternate_infinite_.5s]'} p-xs px-lg  md:px-2xl bg-opacity-50 `}>
       <div
         id={message.messageId}
         className={` ${isFromMe ? 'ml-auto' : 'mr-auto'} flex relative   flex-col bg-transparent gap-xs  items-center
-  max-w-[70%]  sm:max-w-[60%] md:max-w-[50%]  lg:max-w-[40%]  xl:max-w-[30%] `}
+  max-w-[85%]  sm:max-w-[85%] md:max-w-[70%] lg:max-w-[60%] xl:max-w-[50%]`}
       >
         <ContextMenuTrigger id={message.messageId}>
           <div onClick={() => {}} className={` ${isFromMe ? 'rounded-t-xl rounded-bl-xl ' : 'rounded-t-xl rounded-br-xl '}   rounded bg-skin-muted shadow-default relative    grow w-full  ${isFromMe ? 'bg-skin-sender' : 'bg-skin-receiver'} break-words`}>
@@ -103,7 +126,7 @@ export default function Conversation({
               {message.replyId && <RepliedMessage message={message.message!} setRepliedMessageClicked={setRepliedMessageClicked} />}
               {linkify(message.text)}
             </div>
-
+            {/* ${getColorFromName(emojiBelongsto!.name)} */}
             {message.link && (
               <Link href={message.link.url} target='_blank'>
                 <div className='ml-sm border-l-2 border-l-gray-800  bg-transparent   p-2 flex flex-col gap-sm font-mono my-4  '>
@@ -117,9 +140,25 @@ export default function Conversation({
                 </div>
               </Link>
             )}
-            <p className=' flex pr-sm  justify-end gap-xs text-skin-muted font-mono text-xs    items-center'>
-              <RiCheckDoubleLine className='inline-block' />
-              Delivered
+            <p className=' flex pr-sm  justify-between  text-skin-muted font-mono text-xs  items-center'>
+              {/* if any emoji */}
+              {message.emoji && (
+                <button onClick={onRemoveEmoji} className='p-md flex items-center gap-xs bg-skin-muted rounded-full ml-1 mb-1'>
+                  {message.emoji.emoji}
+                  <span
+                    style={{
+                      backgroundColor: emojiAvatarcolor,
+                    }}
+                    className={`text-xs font-mono text-white flex items-center justify-center h-5 w-5 rounded-full `}
+                  >
+                    {getInitials(emojiBelongsto!.name)}
+                  </span>
+                </button>
+              )}
+              <span className='flex grow items-center gap-xs justify-end'>
+                <RiCheckDoubleLine className='inline-block' />
+                Delivered
+              </span>
             </p>
           </div>
         </ContextMenuTrigger>
@@ -134,7 +173,7 @@ export default function Conversation({
 
         <div className='z-50'>
           <ContextMenu id={message.messageId}>
-            <ContextMenuList message={message} setReplyMessage={setReplyMessage} />
+            <ContextMenuList message={message} setReplyMessage={setReplyMessage} setForwardMessage={setForwardMessage} />
           </ContextMenu>
         </div>
       </div>
@@ -146,6 +185,7 @@ const emojis = ['😀', '😂', '😍', '🤔', '🤯', '👍', '👎', '👀', 
 export const ContextMenuList = ({
   message,
   setReplyMessage,
+  setForwardMessage,
 }: {
   message: Message;
   setReplyMessage: React.Dispatch<
@@ -154,17 +194,44 @@ export const ContextMenuList = ({
       message: Message;
     }>
   >;
+  setForwardMessage: React.Dispatch<
+    React.SetStateAction<{
+      show: boolean;
+      message: Message;
+      to: string[];
+    }>
+  >;
 }) => {
+  const user = JSON.parse(localStorage.getItem('user') as string) as User;
+
+  // consume context
+
+  const { rooms, currentOpenChatId, setRooms } = useContext(ChatContext);
+
+  const onReactWithEmoji = (e: React.MouseEvent<HTMLButtonElement>, data: any) => {
+    const tempEmoji: EmojiType = {
+      messageId: message.messageId,
+      emoji: data.emoji,
+      userId: user.userId as string,
+    };
+    updateMessageWithEmoji(tempEmoji, message, rooms, currentOpenChatId, setRooms);
+  };
+
   return (
     <div className='h-36   flex   gap-sm max-w-fit items-start font-mono text-skin-base text-sm z-50    '>
       <div className='choose-emoji-scroll-bar bg-skin-muted p-sm h-36  overflow-y-auto flex flex-col   items-center gap-xs rounded-xl   '>
         {emojis.map((emoji) => (
-          <MenuItem data={{ emoji }} onClick={console.log}>
+          <MenuItem data={{ emoji }} onClick={onReactWithEmoji}>
             <button key={emoji} className=''>
               {emoji}
             </button>
           </MenuItem>
         ))}
+        <MenuItem data={{ add: 'add' }} onClick={console.log}>
+          <button key={'add more emoji'} title='add more emojis'>
+            <RiAddFill />
+          </button>
+        </MenuItem>
       </div>
       <div className='h-full p-lg  flex flex-col    bg-skin-muted   rounded'>
         <MenuItem
@@ -190,7 +257,7 @@ export const ContextMenuList = ({
           </button>
         </MenuItem>
 
-        <MenuItem data={{ forward: 'forward' }} onClick={console.log} className='grow'>
+        <MenuItem data={{ forward: 'forward' }} onClick={() => setForwardMessage({ show: true, message: message, to: [] })} className='grow'>
           <button className='flex h-full  w-full items-center hover:bg-skin-hover grow px-md gap-md'>
             <RiShareForward2Line />
             <span>Forward</span>
@@ -206,6 +273,22 @@ export const ContextMenuList = ({
     </div>
   );
 };
+
+function updateMessageWithEmoji(emoji: EmojiType | null, message: Message, rooms: Map<string, Room>, currentOpenChatId: string, setRooms: (rooms: Map<string, Room>) => void) {
+  const tempMessage: Message = { ...message, emoji };
+
+  const currentRoom = rooms.get(currentOpenChatId);
+  if (!currentRoom) return;
+
+  const tempMessages = currentRoom.messages.map((msg) => (msg.messageId === tempMessage.messageId ? tempMessage : msg));
+
+  const tempRoom = { ...currentRoom, messages: tempMessages };
+  setRooms((prev) => {
+    const temp = new Map(prev);
+    temp.set(currentOpenChatId, tempRoom);
+    return temp;
+  });
+}
 
 function updateClipboard(newClip: string) {
   navigator.clipboard.writeText(newClip).then(

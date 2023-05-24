@@ -21,6 +21,7 @@ function onUserSetup(socket, data) {
     userId,
   };
   io.emit('JoinUserOnline', Object.keys(users));
+  console.log('User ', userName, ' Joined Online Users List ', ' ======> ', ' In Online Users List ', !!users[userName]);
 }
 
 export default onUserSetup;

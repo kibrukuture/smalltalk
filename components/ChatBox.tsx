@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { ChatContext, Message, Room, BinFile, User, Link } from '@/app/ChatContext';
+import { ChatContext, Message, Room, BinFile, User, Link, EmojiType } from '@/app/ChatContext';
 import { RiVidiconFill, RiImageLine, RiFileLine, RiArrowGoBackFill, RiAttachmentLine, RiPhoneFill, RiMore2Fill, RiSendPlaneFill, RiLock2Fill, RiMic2Line, RiDeleteBin6Line, RiDeleteBin6Fill, RiCamera3Line, RiLink } from 'react-icons/ri';
+import ChatRoomContext, { RemotePeerVideoCallingStatus } from '@/app/ChatRoomContext';
 import { BsEmojiLaughingFill } from 'react-icons/bs';
 import Conversation from './Conversation';
 import socket from '@/app/socket.config';
@@ -16,7 +17,7 @@ import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { ContextMenuTrigger } from 'react-contextmenu';
 import ChatBoxContextMenu from './ChatBoxContextMenu';
-import AnsweringVideoCall from './AnsweringVideoCall';
+import VideoCallDisplayer from './VideoCallDisplayer';
 import AnsweringAudioCall from './AnsweringAudioCall';
 import NoChatSelected from './NoChatSelected';
 import Calling from './Calling';
@@ -24,9 +25,10 @@ import Timer from './Timer';
 import CapturePicture from './CapturePicture';
 import ImageViewer from './ImageViewer';
 import ReplyMessage from './ReplyMessage';
+import ForwardMessage from './ForwardMessage';
 import * as linkify from 'linkifyjs';
 // import { formatTime } from '@/app/util.fns';
-import Peer from 'peerjs';
+import Peer, { MediaConnection } from 'peerjs';
 
 export default function ChatBox() {
   const user = JSON.parse(localStorage.getItem('user')!) as User;
@@ -43,12 +45,24 @@ export default function ChatBox() {
   const [binFileLoading, setBinFileLoading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [innerWidth, setInnerWidth] = useState(0);
-  const [showAnsweringVideoCall, setShowAnsweringVideoCall] = useState(false);
+  // const [showVideoCallDisplayer, setShowVideoCallDisplayer] = useState(false);
   const [showAnsweringAudioCall, setShowAnsweringAudioCall] = useState(false);
   const [isAudioBeingRecorded, setIsAudioBeingRecorded] = useState(false);
   const [audioRecorder, setAudioRecorder] = useState<MediaRecorder | null>(null);
   const [audioStream, setAudioStream] = useState<MediaStream>();
   const [showCapturePicture, setShowCapturePicture] = useState(false);
+  const [reactWithEmoji, setReactWithEmoji] = useState({} as EmojiType);
+  const [videoCall, setVideoCall] = useState<MediaConnection | null>(null);
+  const [remotePeerOnlineStatus, setRemotePeerOnlineStatus] = useState({
+    isOnline: false,
+    remotePeer: {} as User,
+    roomId: '',
+  });
+  const [forwardMessage, setForwardMessage] = useState({
+    show: false,
+    message: {} as Message,
+    to: [] as string[],
+  });
   const [repliedMessageClicked, setRepliedMessageClicked] = useState({
     messageId: '',
     isClicked: false,
@@ -64,19 +78,16 @@ export default function ChatBox() {
     user: {} as User,
   });
 
-  const [remotePeerVideoCalling, setRemotePeerVideoCalling] = useState({
-    isCalling: false,
-    peer: {} as User,
-    roomId: '',
-  });
-  const [localPeer, setLocalPeer] = useState<Peer>(
-    new Peer(user.userId!, {
-      host: '/',
-      port: 3001,
-    }),
-  );
+  // const [remotePeerVideoCalling, setRemotePeerVideoCalling] = useState({
+  //   isCalling: false,
+  //   peer: {} as User,
+  //   roomId: '',
+  // });
+  const [localPeer, setLocalPeer] = useState<Peer | null>(null);
 
+  // context
   const { currentOpenChatId, setIsChatRoomTapped, rooms, setRooms, wallpaper } = useContext(ChatContext);
+  const { setCaller, showVideoCallDisplayer, setShowVideoCallDisplayer, setRemotePeerVideoCalling, remotePeerVideoCalling } = useContext(ChatRoomContext);
 
   let currentRoom: Room;
   if (rooms.size) currentRoom = rooms.get(currentOpenChatId as string)!;
@@ -96,23 +107,55 @@ export default function ChatBox() {
       setInnerWidth(window.innerWidth);
     }
 
+    // localPeer.on('open', (id) => {
+    //   console.log('local peer id is : ', id);
+    // });
     // accept or reject call.
-    socket.on('AcceptOrRejectVideoCall', (data) => {
-      setRemotePeerVideoCalling({
-        isCalling: true,
-        peer: data.sender,
-        roomId: data.roomId,
-      });
-    });
+    // socket.on('AcceptOrRejectVideoCall', (data) => {
+    //   setRemotePeerVideoCalling({
+    //     isCalling: true,
+    //     peer: data.sender,
+    //     roomId: data.roomId,
+    //   });
+    // });
     // video call rejected.
     socket.on('VideoCallAcceptingPeerRejected', (data) => {
-      setShowAnsweringVideoCall(false);
+      setShowVideoCallDisplayer(false);
     });
     // video call ended ( by either of the peers)
     socket.on('EndVideoCall', (data) => {
       console.log('remote peer ended video call.');
-      setShowAnsweringVideoCall(false);
+      setShowVideoCallDisplayer(false);
     });
+
+    // Remote Peer Offline
+    socket.on('RemotePeerOffline', (data) => {
+      const { caller, friend, roomId } = data;
+      console.log(friend.name, ' is offline');
+      setRemotePeerOnlineStatus({
+        isOnline: false,
+        remotePeer: friend,
+        roomId,
+      });
+    });
+    // Remote Peer Online
+    socket.on('RemotePeerOnline', (data) => {
+      const { caller, friend, roomId } = data;
+      console.log(friend.name, ' is online');
+      setRemotePeerOnlineStatus({
+        isOnline: true,
+        remotePeer: friend,
+        roomId,
+      });
+    });
+
+    return () => {
+      socket.off('RemotePeerOffline');
+      socket.off('RemotePeerOnline');
+      socket.off('AcceptOrRejectVideoCall');
+      socket.off('VideoCallAcceptingPeerRejected');
+      socket.off('EndVideoCall');
+    };
   }, []);
 
   // open attachment
@@ -205,7 +248,7 @@ export default function ChatBox() {
       updatedAt: null,
       message: reply,
       replyId,
-      emoji: '',
+      emoji: null,
       link: embedLink,
       attachment: tempAttachment,
     };
@@ -264,27 +307,30 @@ export default function ChatBox() {
         });
   };
 
-  const onVideoCallDisplayUserMedia = (val: boolean) => {
-    setShowAnsweringVideoCall(val);
+  // const onVideoCallDisplayUserMedia = (val: boolean) => {
+  //   setShowVideoCallDisplayer(val);
 
-    // remove the remote users from
-  };
+  //   // remove the remote users from
+  // };
 
-  localPeer.on('open', (id) => {
-    console.log('local peer id is : ', id);
-  });
   const onStartVideoCall = () => {
-    setShowAnsweringVideoCall(true);
-    // emit informatin to remote peer
+    setCaller(user);
+    const peer = new Peer(user.userId!, {
+      host: '/',
+      port: 3001,
+    });
+    setShowVideoCallDisplayer(true);
+    setLocalPeer(peer);
 
-    //ringing until remote user answers.
+    //calling
     outGoingCallAudioRef.current && outGoingCallAudioRef.current.play();
 
-    // socket.emit('StartVideoCall', {
-    //   roomId: currentOpenChatId,
-    //   sender: user,
-    //   friend: currentRoom.friend,
-    // });
+    // on remote user, check if they are online or offline. if online, change calling status to Ringing.
+    socket.emit('StartVideoCall', {
+      roomId: currentOpenChatId,
+      caller: user,
+      friend: currentRoom.friend,
+    });
   };
 
   const onStartAudioRecording = async () => {
@@ -320,10 +366,10 @@ export default function ChatBox() {
     }
   };
 
-  socket.on('StartVideoCall', (data) => {
-    onVideoCallDisplayUserMedia(true);
-    const { sender, friend, roomId } = data;
-  });
+  // socket.on('StartVideoCall', (data) => {
+  //   onVideoCallDisplayUserMedia(true);
+  //   const { sender, friend, roomId } = data;
+  // });
 
   const onGetCapturePicture = (data: string, size: number) => {
     console.log(data);
@@ -343,9 +389,10 @@ export default function ChatBox() {
   if (!currentOpenChatId || rooms.size === 0) return <NoChatSelected />;
   return (
     <div ref={chatBoxRef} className='flex flex-col max-h-screen h-screen w-full '>
-      {remotePeerVideoCalling.isCalling && <Calling remotePeer={remotePeerVideoCalling} setShowAnsweringVideoCall={setShowAnsweringVideoCall} setRemotePeerVideoCalling={setRemotePeerVideoCalling} />}
+      {/* {remotePeerVideoCalling.isCalling && <Calling remotePeer={remotePeerVideoCalling} setShowVideoCallDisplayer={setShowVideoCallDisplayer} setRemotePeerVideoCalling={setRemotePeerVideoCalling} />} */}
       {imageViewer.show && <ImageViewer imageViewer={imageViewer} setImageViewer={setImageViewer} />}
       {false && <audio ref={outGoingCallAudioRef} loop={true} src='/sound-effects/caller.wav' preload='auto' />}
+      {forwardMessage.show && <ForwardMessage forwardMessage={forwardMessage} setForwardMessage={setForwardMessage} />}
       <div className='flex items-center   '>
         {/* arrow back button   */}
         {innerWidth <= 768 && (
@@ -374,7 +421,7 @@ export default function ChatBox() {
           </div>
           <div className='flex gap-sm items-center  '>
             {/* video  */}
-            <button title={`${showAnsweringVideoCall ? "Already calling.Can't restart another" : 'Video call'}`} disabled={showAnsweringVideoCall} onClick={onStartVideoCall} className={`${showAnsweringVideoCall && 'cursor-not-allowed'}`}>
+            <button title={`${showVideoCallDisplayer ? "Already calling.Can't restart another" : 'Video call'}`} disabled={showVideoCallDisplayer} onClick={onStartVideoCall} className={`${showVideoCallDisplayer && 'cursor-not-allowed'}`}>
               <RiVidiconFill className='font-bold' />
             </button>
             {/* audio  */}
@@ -396,7 +443,7 @@ export default function ChatBox() {
               backgroundImage: `${wallpaper === 'default' && 'url(./wallpaper/default.png)'}`,
             }}
             ref={chatContentRef}
-            className='grow gap-sm overflow-y-auto p-lg  md:p-2xl flex flex-col w-full'
+            className='grow gap-sm overflow-y-auto  flex flex-col w-full'
           >
             {currentRoom.messages.length > 0 &&
               currentRoom.messages.map((message, id) => {
@@ -419,14 +466,14 @@ export default function ChatBox() {
                       </p>
                     </div>
                   );
-                return <Conversation repliedMessageClicked={repliedMessageClicked} setRepliedMessageClicked={setRepliedMessageClicked} setReplyMessage={setReplyMessage} key={message.messageId} friend={currentRoom.friend} message={message} setImageViewer={setImageViewer} />;
+                return <Conversation setForwardMessage={setForwardMessage} repliedMessageClicked={repliedMessageClicked} setRepliedMessageClicked={setRepliedMessageClicked} setReplyMessage={setReplyMessage} key={message.messageId} friend={currentRoom.friend} message={message} setImageViewer={setImageViewer} />;
               })}
           </div>
           <ChatBoxContextMenu />
         </ContextMenuTrigger>
 
         {showAnsweringAudioCall && <AnsweringAudioCall />}
-        {showAnsweringVideoCall && <AnsweringVideoCall onVideoCallDisplayUserMedia={onVideoCallDisplayUserMedia} localPeer={localPeer} remotePeerVideoCalling={remotePeerVideoCalling} />}
+        {showVideoCallDisplayer && <VideoCallDisplayer setShowVideoCallDisplayer={setShowVideoCallDisplayer} remotePeerOnlineStatus={remotePeerOnlineStatus} localPeer={localPeer} />}
       </div>
       {/* bottom part  */}
       <div className='flex flex-col  '>

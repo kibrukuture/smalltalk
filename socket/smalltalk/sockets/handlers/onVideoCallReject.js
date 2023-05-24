@@ -1,19 +1,19 @@
 import { users } from '../../datastr/index.js';
-export default function onVideoCallAccepted(socket, data) {
+export default function onVideoCallReject(socket, data) {
   const { caller, roomId, friend } = data;
+  console.log('Shaking Hand: ', data, 'users ', users);
 
-  // accept video call.
+  // on video call rejected.
   if (users[caller.userName]) {
+    // console.log('Handshake Over Websockt, Remote Peer Id:', friend.userId);
     socket.join(roomId);
     users[caller.userName].socket.join(roomId);
 
     // broadcast to all except sender
-    users[caller.userName].socket.emit('VideoCallAccepted', {
+    users[caller.userName].socket.emit('VideoCallRejected', {
       roomId,
       caller,
       friend,
     });
   }
-
-  console.log(friend.name, ' accepted video call from ', caller.name);
 }

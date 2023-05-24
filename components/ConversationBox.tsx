@@ -69,7 +69,7 @@ export default function ConversationBox() {
     setIsOnSearchInterface(false);
     setSearchResult([]);
 
-    // set alert
+    // set alert<
     setAlert({
       title: 'Friend Request',
       message: `Friend request sent to ${findItem.name}`,

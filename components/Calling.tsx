@@ -1,10 +1,17 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useContext } from 'react';
 import { RiPhoneFill } from 'react-icons/ri';
+import { User } from '@/app/ChatContext';
 import Draggable from 'react-draggable';
 import socket from '@/app/socket.config';
+import ChatRoomContext, { RemotePeerVideoCallingStatus } from '@/app/ChatRoomContext';
+import { ChatContext } from '@/app/ChatContext';
 
-// remotePeer={remotePeerVideoCalling} showAnsweringVideoCall={showAnsweringVideoCall} setRemotePeerVideoCalling={setRemotePeerVideoCalling}
-export default function Calling({ remotePeer, setShowAnsweringVideoCall, setRemotePeerVideoCalling }) {
+const user = JSON.parse(localStorage.getItem('user')!) as User;
+
+export default function Calling() {
+  // consume context
+  const { setIsCallAnswered, remotePeerVideoCalling, setRemotePeerVideoCalling, setShowVideoCallDisplayer, showVideoCallDisplayer } = useContext(ChatRoomContext);
+  const { setCurrentOpenChatId } = useContext(ChatContext);
   // ref to audio
   const playAudioRef = useRef<HTMLButtonElement>(null);
   const incomingCallAudioRef = useRef<HTMLAudioElement>(null);
@@ -15,33 +22,43 @@ export default function Calling({ remotePeer, setShowAnsweringVideoCall, setRemo
     }
   }, []);
 
+  // call accepted
   const onAcceptCall = () => {
-    console.log('accepted call');
-    setShowAnsweringVideoCall(true);
-    setRemotePeerVideoCalling((prev) => ({
-      ...prev,
-      isCalling: false,
-    }));
+    // console.log('accepted call');
+    setCurrentOpenChatId(remotePeerVideoCalling.roomId);
+    setShowVideoCallDisplayer(true);
+    setIsCallAnswered(true);
 
     //
-    socket.emit('VideoCallingAccepted', {
-      roomId: remotePeer.roomId,
-      callingPeer: remotePeer.peer,
+    socket.emit('VideoCallAccepted', {
+      roomId: remotePeerVideoCalling.roomId,
+      caller: remotePeerVideoCalling.peer,
+      friend: user,
+    });
+
+    setRemotePeerVideoCalling({
+      isCalling: false,
+      peer: {} as User,
+      roomId: '',
     });
   };
+
+  // call rejected
   const onRejectCall = () => {
     console.log('rejected call call');
-    setShowAnsweringVideoCall(false);
-    setRemotePeerVideoCalling((prev) => ({
-      isCalling: false,
-      peer: {},
-      roomId: '',
-    }));
-
+    setShowVideoCallDisplayer(false);
+    setIsCallAnswered(false);
     // close the remote peer video stream
-    socket.emit('VideoCallingRejected', {
-      roomId: remotePeer.roomId,
-      callingPeer: remotePeer.peer,
+    socket.emit('VideoCallRejected', {
+      roomId: remotePeerVideoCalling.roomId,
+      caller: remotePeerVideoCalling.peer,
+      friend: user,
+    });
+
+    setRemotePeerVideoCalling({
+      isCalling: false,
+      peer: {} as User,
+      roomId: '',
     });
   };
   return (
@@ -49,11 +66,11 @@ export default function Calling({ remotePeer, setShowAnsweringVideoCall, setRemo
       <div className='z-50 cursor-auto  flex gap-sm rounded-full items-center bg-black text-skin-muted fixed top-5 right-5 p-lg '>
         <div className='relative'>
           <button className='relative overflow-hidden text-skin-muted w-8 h-8 shadow-default flex items-center justify-center   rounded-full '>
-            <img className='object-cover h-12 w-12 ' src={remotePeer.avatarUrl} alt='' />
+            <img className='object-cover h-12 w-12 ' src={remotePeerVideoCalling.peer.avatarUrl} alt='' />
           </button>
         </div>
         <div className='flex flex-col '>
-          <p>{remotePeer.name}</p>
+          <p>{remotePeerVideoCalling.peer.name}</p>
           <p className='text-xs font-mono flex items-center gap-sm '>
             <span>Calling </span>
             <span className='relative flex h-3 w-3'>

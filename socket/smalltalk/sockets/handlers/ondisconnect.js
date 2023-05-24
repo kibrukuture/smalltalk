@@ -20,15 +20,14 @@ async function onDisconnect(socket, lastSeen) {
 
   //   // user is online
 
-  // // remove user from lastSeen
+  // remove user from lastSeen
   // delete lastSeen[lastSeenUserId];
 
-  // // remove user from online users
-  // delete users[socket.username];
+  // remove user from online users
+  delete users[socket.userName];
 
   //
-
-  console.log('user disconnected');
+  console.log('User', socket.userName, ' disconnected', ' ======> ', 'In Online Users List', !!users[socket.userName]);
 
   //
 }

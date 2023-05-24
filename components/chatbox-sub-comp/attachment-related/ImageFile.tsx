@@ -27,8 +27,8 @@ export default function ImageFile({
   };
 
   return (
-    <button onClick={onImageViewFullScreen} className='block appearance-none'>
-      <img src={attachment.url} alt='' />
+    <button onClick={onImageViewFullScreen} className='block appearance-none '>
+      <img src={attachment.url} alt='' className='rounded-tl-md rounded-tr-md' />
     </button>
   );
 }
