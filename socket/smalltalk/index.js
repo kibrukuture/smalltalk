@@ -13,6 +13,7 @@ import onVideoCallReject from './sockets/handlers/onVideoCallReject.js';
 import onEndVideoCall from './sockets/handlers/onEndVideoCall.js';
 import { lastSeen } from './datastr/index.js';
 import onVideoCallAccepted from './sockets/handlers/onVideoCallAccepted.js';
+import onRemotePeerVideoCallEnd from './sockets/handlers/onRemotePeerVideoCallEnd.js';
 
 // server setup
 const server = createServer(app);
@@ -38,6 +39,7 @@ io.on('connection', (socket) => {
   socket.on('StartVideoCall', (data) => onStartVideoCall(socket, data)); // start video call   ;
   socket.on('EndVideoCall', (data) => onEndVideoCall(socket, data)); // end video call
   socket.on('VideoCallAccepted', (data) => onVideoCallAccepted(socket, data)); // end video call
+  socket.on('RemotePeerVideoCallEnd', (data) => onRemotePeerVideoCallEnd(socket, data)); // end video call
   socket.on('disconnect', () => onDisconnect(socket, lastSeen)); // disconnect
 });
 

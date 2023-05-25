@@ -16,7 +16,7 @@ export default function ConversationBox() {
   // consume context
   const { setCurrentOpenChatId, setAlert, rooms, allChats, isUserNotAbleToSendFriendRequest, setIsUserNotAbleToSendFriendRequest } = useContext(ChatContext);
 
-  console.log('in box ', allChats);
+  // console.log('in box ', allChats);
   const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 

@@ -10,7 +10,7 @@ async function onDisconnect(socket, lastSeen) {
   const { data, error } = await supabase.from('last_seen').update({ at: lastSeenAt }).eq('user_id', lastSeenUserId).select('*');
   // error
   if (error) {
-    console.log('onDisconnect: ', error.message);
+    // console.log('onDisconnect: ', error.message);
   }
 
   // notify users connected to this socket.
@@ -27,7 +27,7 @@ async function onDisconnect(socket, lastSeen) {
   delete users[socket.userName];
 
   //
-  console.log('User', socket.userName, ' disconnected', ' ======> ', 'In Online Users List', !!users[socket.userName]);
+  console.log(socket.userName, ' disconnected ', ' ======> ', ' Is in "Online User_Obj" (bool): ', !!users[socket.userName]);
 
   //
 }

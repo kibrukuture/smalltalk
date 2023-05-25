@@ -49,7 +49,7 @@ export default function CapturePicture({ onGetCapturePicture, setShowCapturePict
     setShowCapturePicture(false);
   };
   return (
-    <div className='fixed    top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2   w-full md:2/3 lg:w-1/2 h-full p-sm z-40 text-sm font-mono text-white '>
+    <div className='fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2   w-full md:2/3 lg:w-1/2 h-full p-sm z-40 text-sm font-mono text-white '>
       <video ref={captureVideoRef} className='bg-black w-full h-full min-h-full min-w-full object-cover rounded-lg' />
       <div className='flex items-center justify-around gap-sm p-lg transform translate-x-1/2 absolute w-1/2 md:2/3 lg:w-1/2 bottom-10  left-0  h-[50px] bg-black opacity-50 backdrop-blur-md  rounded-full '>
         <div className='flex items-center gap-xs'>

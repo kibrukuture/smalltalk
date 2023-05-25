@@ -5,12 +5,13 @@ import Draggable from 'react-draggable';
 import socket from '@/app/socket.config';
 import ChatRoomContext, { RemotePeerVideoCallingStatus } from '@/app/ChatRoomContext';
 import { ChatContext } from '@/app/ChatContext';
+import Peer from 'peerjs';
 
 const user = JSON.parse(localStorage.getItem('user')!) as User;
 
 export default function Calling() {
   // consume context
-  const { setIsCallAnswered, remotePeerVideoCalling, setRemotePeerVideoCalling, setShowVideoCallDisplayer, showVideoCallDisplayer } = useContext(ChatRoomContext);
+  const { setIsCallAnswered, remotePeerVideoCalling, setRemotePeerVideoCalling, setShowVideoCallDisplayer, showVideoCallDisplayer, localPeer, setLocalPeer } = useContext(ChatRoomContext);
   const { setCurrentOpenChatId } = useContext(ChatContext);
   // ref to audio
   const playAudioRef = useRef<HTMLButtonElement>(null);
@@ -24,18 +25,27 @@ export default function Calling() {
 
   // call accepted
   const onAcceptCall = () => {
-    // console.log('accepted call');
-    setCurrentOpenChatId(remotePeerVideoCalling.roomId);
     setShowVideoCallDisplayer(true);
-    setIsCallAnswered(true);
+    const peer = new Peer(user.userId!, { host: '/', port: 3001 });
+    setLocalPeer(peer);
+    setCurrentOpenChatId(remotePeerVideoCalling.roomId);
 
-    //
+    // // console.log('accepted call');
+    // const peer = new Peer(user.userId!, {
+    //   host: '/',
+    //   port: 3001,
+    // });
+    // setShowVideoCallDisplayer(true);
+    // setLocalPeer(peer);
+    // setCurrentOpenChatId(remotePeerVideoCalling.roomId);
+    // // setShowVideoCallDisplayer(true);
+    // setIsCallAnswered(true);
+    // //
     socket.emit('VideoCallAccepted', {
       roomId: remotePeerVideoCalling.roomId,
       caller: remotePeerVideoCalling.peer,
       friend: user,
     });
-
     setRemotePeerVideoCalling({
       isCalling: false,
       peer: {} as User,
@@ -45,16 +55,15 @@ export default function Calling() {
 
   // call rejected
   const onRejectCall = () => {
-    console.log('rejected call call');
-    setShowVideoCallDisplayer(false);
-    setIsCallAnswered(false);
-    // close the remote peer video stream
+    // console.log('rejected call call');
+    // setShowVideoCallDisplayer(false);
+    // setIsCallAnswered(false);
+    // // close the remote peer video stream
     socket.emit('VideoCallRejected', {
       roomId: remotePeerVideoCalling.roomId,
       caller: remotePeerVideoCalling.peer,
       friend: user,
     });
-
     setRemotePeerVideoCalling({
       isCalling: false,
       peer: {} as User,

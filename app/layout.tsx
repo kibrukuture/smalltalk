@@ -149,7 +149,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     });
   };
 
-  console.log('all rooms: ', rooms, currentOpenChatId);
+  // console.log('all rooms: ', rooms, currentOpenChatId);
   return (
     <html lang='en'>
       <head>

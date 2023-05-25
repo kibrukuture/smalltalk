@@ -94,3 +94,11 @@ type: 'jpg'
 }
 }
 \*/
+
+let handler = function (target, prop, receiver) {
+
+console.log(target, prop, receiver);
+
+return Reflect.get(...arguments);
+
+    }

@@ -83,11 +83,10 @@ export default function ChatBox() {
   //   peer: {} as User,
   //   roomId: '',
   // });
-  const [localPeer, setLocalPeer] = useState<Peer | null>(null);
 
   // context
   const { currentOpenChatId, setIsChatRoomTapped, rooms, setRooms, wallpaper } = useContext(ChatContext);
-  const { setCaller, showVideoCallDisplayer, setShowVideoCallDisplayer, setRemotePeerVideoCalling, remotePeerVideoCalling } = useContext(ChatRoomContext);
+  const { setLocalPeer, localPeer, setCaller, showVideoCallDisplayer, setShowVideoCallDisplayer, setRemotePeerVideoCalling, remotePeerVideoCalling } = useContext(ChatRoomContext);
 
   let currentRoom: Room;
   if (rooms.size) currentRoom = rooms.get(currentOpenChatId as string)!;
@@ -307,23 +306,18 @@ export default function ChatBox() {
         });
   };
 
-  // const onVideoCallDisplayUserMedia = (val: boolean) => {
-  //   setShowVideoCallDisplayer(val);
-
-  //   // remove the remote users from
-  // };
-
   const onStartVideoCall = () => {
-    setCaller(user);
+    // create a peer
     const peer = new Peer(user.userId!, {
       host: '/',
       port: 3001,
     });
-    setShowVideoCallDisplayer(true);
     setLocalPeer(peer);
+    setCaller(user);
+    setShowVideoCallDisplayer(true);
 
     //calling
-    outGoingCallAudioRef.current && outGoingCallAudioRef.current.play();
+    // outGoingCallAudioRef.current && outGoingCallAudioRef.current.play();
 
     // on remote user, check if they are online or offline. if online, change calling status to Ringing.
     socket.emit('StartVideoCall', {
@@ -473,7 +467,7 @@ export default function ChatBox() {
         </ContextMenuTrigger>
 
         {showAnsweringAudioCall && <AnsweringAudioCall />}
-        {showVideoCallDisplayer && <VideoCallDisplayer setShowVideoCallDisplayer={setShowVideoCallDisplayer} remotePeerOnlineStatus={remotePeerOnlineStatus} localPeer={localPeer} />}
+        {showVideoCallDisplayer && <VideoCallDisplayer setShowVideoCallDisplayer={setShowVideoCallDisplayer} remotePeerOnlineStatus={remotePeerOnlineStatus} />}
       </div>
       {/* bottom part  */}
       <div className='flex flex-col  '>

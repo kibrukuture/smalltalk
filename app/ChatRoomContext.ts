@@ -1,5 +1,6 @@
 import { createContext } from 'react';
 import { User } from './ChatContext';
+import Peer from 'peerjs';
 
 export type RemotePeerVideoCallingStatus = {
   isCalling: boolean;
@@ -29,10 +30,15 @@ const ChatRoomContext = createContext({
   isCallAnswered: false,
   setIsCallAnswered: (value: boolean) => {},
 
+  // set local peer
+  localPeer: null as Peer | null,
+  setLocalPeer: (value: Peer | null) => {},
+
   // end;
 });
 export default ChatRoomContext;
 /*
- isCallAnswered,setIsCallAnswered
+  const [localPeer, setLocalPeer] = useState<Peer | null>(null);
+
 
 */

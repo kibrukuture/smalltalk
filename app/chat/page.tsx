@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { addNewMessage } from '../util.fns';
 import { User } from '../ChatContext';
 import Calling from '@/components/Calling';
+import Peer from 'peerjs';
 
 // select tab
 const tab: any = {
@@ -24,13 +25,19 @@ const tab: any = {
 };
 
 export default function Chat() {
+  // local storage
+  const user = JSON.parse(localStorage.getItem('user') as string) as User;
+
   // state
   const [currentInnerWidth, setCurrentInnerWidth] = useState<number>(0);
   const [remotePeerVideoCalling, setRemotePeerVideoCalling] = useState({} as RemotePeerVideoCallingStatus);
   const [showVideoCallDisplayer, setShowVideoCallDisplayer] = useState(false);
-  const [localUserVideoStream, setLocalUserVideoStream] = useState<MediaStream>();
+  const [localUserVideoStream, setLocalUserVideoStream] = useState<MediaStream | null>(null);
+  const [remoteUserVideoStream, setRemoteUserVideoStream] = useState<MediaStream | null>(null);
   const [caller, setCaller] = useState({} as User);
   const [isCallAnswered, setIsCallAnswered] = useState(false);
+  const [localPeer, setLocalPeer] = useState<Peer | null>(null);
+
   //consume context
   const { rooms, isChatRoomTapped, setRooms, currentOpenChatId, setCurrentOpenChatId, typing, setTyping, setIsAllChatsLoading, isAllChatsLoading, setUser, barCurrentTab, setFriendRequests, friendRequests, setIsUserNotAbleToSendFriendRequest } = useContext(ChatContext);
 
@@ -42,7 +49,7 @@ export default function Chat() {
 
   useEffect(() => {
     // on reload set user data.
-    setUser(JSON.parse(localStorage.getItem('user') as string));
+    setUser(user);
 
     // only run in browser.
     let onResize;
@@ -141,6 +148,9 @@ export default function Chat() {
     // incoming video call
     socket.on('IncomingVideoCall', (data) => {
       const { caller, roomId, friend } = data;
+      // const peer = new Peer(user.userId!, { host: '/', port: 3001 });
+      // setLocalPeer(peer);
+      // setShowVideoCallDisplayer(true);
 
       setRemotePeerVideoCalling({
         isCalling: true,
@@ -161,21 +171,31 @@ export default function Chat() {
       console.log('local video stream: ', localUserVideoStream && localUserVideoStream.getTracks());
     });
 
-    console.log('how many times, should be once');
+    // remote peer video call ended
+    // socket.on('RemotePeerVideoCallEnd', (data) => {
+    //   const { callEndedBy, roomId, peer } = data;
+
+    //   localPeer!.destroy(); // distory localPeer.
+    //   console.log(localPeer?.destroyed, 'local peer destroyed');
+    //   // setLocalPeer(null);
+    //   setShowVideoCallDisplayer(false);
+    // });
+
+    // console.log('In chat page: localPeer', localPeer);
     return () => {
       // socket.off('connect');
       window.removeEventListener('resize', onResize);
 
       // unmount socket listeners
-      console.log('I am being unmounted');
+      // console.log('I am being unmounted');
     };
   }, []);
 
-  console.log(':Component Rendered:', '# of rooms are: ', rooms.get(currentOpenChatId)?.messages.length);
+  // console.log(':Component Rendered:', '# of rooms are: ', rooms.get(currentOpenChatId)?.messages.length);
   if (!rooms.size && isAllChatsLoading) return <div className='h-screen w-full bg-black flex items-center justify-center text-skin-base text-2xl font-bold text-center  '>loading</div>;
 
   return (
-    <ChatRoomContext.Provider value={{ remotePeerVideoCalling, setRemotePeerVideoCalling, showVideoCallDisplayer, setShowVideoCallDisplayer, localUserVideoStream, setLocalUserVideoStream, caller, setCaller, isCallAnswered, setIsCallAnswered }}>
+    <ChatRoomContext.Provider value={{ remotePeerVideoCalling, setRemotePeerVideoCalling, showVideoCallDisplayer, setShowVideoCallDisplayer, localUserVideoStream, setLocalUserVideoStream, caller, setCaller, isCallAnswered, setIsCallAnswered, localPeer, setLocalPeer }}>
       <div className='max-h-screen h-screen w-full flex flex-col-reverse md:flex md:flex-row'>
         {/* medium and large screen */}
         {currentInnerWidth > 768 && <Bar />}

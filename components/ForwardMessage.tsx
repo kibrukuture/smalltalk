@@ -111,7 +111,12 @@ export default function ForwardMessage({
               </div>
             </div>
           ))}
-          {friends.length === 0 && <p className='text-xs text-skin-muted text-center'>No friends found</p>}
+          {friends.length === 0 && (
+            <p className='text-xs text-skin-muted text-center'>
+              <img src='/illustrations/no-data.svg' alt='' />
+              No friends found
+            </p>
+          )}
         </div>
         {/* selected friends */}
 
