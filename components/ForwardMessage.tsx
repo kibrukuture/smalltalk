@@ -122,7 +122,9 @@ export default function ForwardMessage({
 
         <div className='flex items-center gap-sm mt-10 flex-wrap'>
           {selectedFriends.map((friend) => (
-            <p className='text-xs text-gray-100 p-md bg-green-300 bg-opacity-20 rounded-md backdrop-blur-sm'>{friend}</p>
+            <p key={friend} className='text-xs text-gray-100 p-md bg-green-300 bg-opacity-20 rounded-md backdrop-blur-sm'>
+              {friend}
+            </p>
           ))}
         </div>
 

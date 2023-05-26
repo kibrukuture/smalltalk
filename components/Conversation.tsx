@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState, TouchEvent, MouseEvent } from 'react';
 import { RiAddFill, RiLink, RiCheckDoubleLine, RiDeleteBinLine, RiCheckLine, RiReplyLine, RiFileCopy2Line, RiShareForward2Line } from 'react-icons/ri';
 import { formatAmPm, getColorFromName, getInitials } from '@/app/util.fns';
 import { Message, User, Attachment, EmojiType, Room } from '@/app/ChatContext';
@@ -205,10 +205,9 @@ export const ContextMenuList = ({
   const user = JSON.parse(localStorage.getItem('user') as string) as User;
 
   // consume context
-
   const { rooms, currentOpenChatId, setRooms } = useContext(ChatContext);
 
-  const onReactWithEmoji = (e: React.MouseEvent<HTMLButtonElement>, data: any) => {
+  const onReactWithEmoji = (e: MouseEvent<HTMLButtonElement>, data: any) => {
     const tempEmoji: EmojiType = {
       messageId: message.messageId,
       emoji: data.emoji,
@@ -217,17 +216,26 @@ export const ContextMenuList = ({
     updateMessageWithEmoji(tempEmoji, message, rooms, currentOpenChatId, setRooms);
   };
 
+  const onDeleteConversation = (e: TouchEvent<HTMLDivElement> | MouseEvent<HTMLDivElement, MouseEvent>, data: any) => {
+    // delete a conversation
+
+    console.log(message.messageId, currentOpenChatId);
+    // ;end
+
+    // fire emit event to server; (if the other peer has not seen the message, it is deletable)
+  };
+
   return (
     <div className='h-36   flex   gap-sm max-w-fit items-start font-mono text-skin-base text-sm z-50    '>
       <div className='choose-emoji-scroll-bar bg-skin-muted p-sm h-36  overflow-y-auto flex flex-col   items-center gap-xs rounded-xl   '>
         {emojis.map((emoji) => (
-          <MenuItem data={{ emoji }} onClick={onReactWithEmoji}>
+          <MenuItem data={{ emoji }} onClick={onReactWithEmoji} key={emoji}>
             <button key={emoji} className=''>
               {emoji}
             </button>
           </MenuItem>
         ))}
-        <MenuItem data={{ add: 'add' }} onClick={console.log}>
+        <MenuItem data={{ add: 'add' }} onClick={console.log} key='add more'>
           <button key={'add more emoji'} title='add more emojis'>
             <RiAddFill />
           </button>
@@ -243,6 +251,7 @@ export const ContextMenuList = ({
             })
           }
           className='grow'
+          key='reply'
         >
           <button className='flex h-full   w-full items-center hover:bg-skin-hover grow px-md gap-md'>
             <RiReplyLine />
@@ -250,20 +259,20 @@ export const ContextMenuList = ({
           </button>
         </MenuItem>
 
-        <MenuItem data={{ copy: 'copy' }} onClick={() => updateClipboard(message.text + (message.attachment ? message.attachment?.name : ''))} className='grow'>
+        <MenuItem data={{ copy: 'copy' }} onClick={() => updateClipboard(message.text + (message.attachment ? message.attachment?.name : ''))} className='grow' key='copy'>
           <button className='flex h-full  w-full items-center hover:bg-skin-hover grow px-md gap-md'>
             <RiFileCopy2Line />
             <span>Copy</span>
           </button>
         </MenuItem>
 
-        <MenuItem data={{ forward: 'forward' }} onClick={() => setForwardMessage({ show: true, message: message, to: [] })} className='grow'>
+        <MenuItem data={{ forward: 'forward' }} onClick={() => setForwardMessage({ show: true, message: message, to: [] })} className='grow' key='forward'>
           <button className='flex h-full  w-full items-center hover:bg-skin-hover grow px-md gap-md'>
             <RiShareForward2Line />
             <span>Forward</span>
           </button>
         </MenuItem>
-        <MenuItem data={{ delete: 'delete' }} onClick={console.log} className='grow'>
+        <MenuItem data={{ delete: 'delete' }} onClick={onDeleteConversation} className='grow' key='delete'>
           <button className='flex h-full   w-full items-center hover:bg-skin-hover grow px-md gap-md'>
             <RiDeleteBinLine />
             <span>Delete</span>

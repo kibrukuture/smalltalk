@@ -45,7 +45,7 @@ export default function ReplyMessage({
         {attachment && <ReplyAttachmentPicture attachment={attachment} />}
         <div className=''>
           <p className='text-sm font-semibold text-skin-muted'>{messageBelongsTo.name}</p>
-          <p>
+          <div>
             {attachment ? (
               <div className='flex items-center gap-2 text-xs text-skin-muted'>
                 <span>{attachment.name}</span>
@@ -61,7 +61,7 @@ export default function ReplyMessage({
             ) : (
               <p>{text.length > 250 ? text.substring(0, 250) + '...' : text}</p>
             )}
-          </p>
+          </div>
         </div>
       </div>
       <button onClick={() => setReplyMessage({ show: false, message: {} as Message })} className='text-skin-muted p-md flex items-center justify-center absolute top-0 right-5 bg-black rounded-full w-5 h-5'>
@@ -72,7 +72,6 @@ export default function ReplyMessage({
 }
 
 function ReplyAttachmentPicture({ attachment }: { attachment: Attachment }) {
-  console.log(getFileTypeColors(attachment.ext)[1]);
   return (
     <>
       {attachment.type === 'image' && (

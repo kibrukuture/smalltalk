@@ -7,14 +7,14 @@ import { RiMicFill, RiMicOffFill, RiPhoneFill, RiArrowDropDownLine, RiArrowDropU
 
 import socket from '@/app/socket.config';
 
-export default function ShowVideoCallDisplayer({
-  setShowVideoCallDisplayer,
+export default function VoiceCallDisplayer({
+  setShowVoiceCallDisplayer,
   // outGoingCallAudioRef,
   // localPeer,
   remotePeerOnlineStatus,
 }: // remotePeerVideoCalling,
 {
-  setShowVideoCallDisplayer: (val: boolean) => void;
+  setShowVoiceCallDisplayer: (val: boolean) => void;
   // localPeer: Peer | null;
   remotePeerOnlineStatus: {
     isOnline: boolean;
@@ -33,17 +33,17 @@ export default function ShowVideoCallDisplayer({
   const [isWide, setIsWide] = useState(true);
   // const [caller, setCaller] = useState({} as User);
   const [isStillNotAnswered, setIsStillNotAnswered] = useState(true);
-  const [videoStream, setVideoStream] = useState<MediaStream>();
+  const [audioStream, setAudioStream] = useState<MediaStream>();
 
   // video refs
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  let backgroundTime = useRef(0);
-  let backgroundTimeInterval;
+  const localAudioRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLVideoElement>(null);
+  //   let backgroundTime = useRef(0);
+  //   let backgroundTimeInterval;
 
   //consume context
   const { currentOpenChatId, rooms } = useContext(ChatContext);
-  const { setLocalPeer, localPeer, localUserVideoStream, setLocalUserVideoStream, caller, setCaller, isCallAnswered } = useContext(ChatRoomContext);
+  const { setLocalPeer, localPeer, caller, setCaller, isCallAnswered } = useContext(ChatRoomContext);
 
   //user from locak storage
   const user = JSON.parse(localStorage.getItem('user')!) as User;
@@ -56,14 +56,14 @@ export default function ShowVideoCallDisplayer({
     if (typeof navigator !== 'undefined') {
       (async () => {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setVideoStream(localStream);
-        // setLocalUserVideoStream(localStream);
+        setAudioStream(localStream);
+        // setLocalUseraudioStream(localStream);
 
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStream;
-          localVideoRef.current.muted = true;
-          localVideoRef.current.addEventListener('loadedmetadata', () => {
-            localVideoRef.current!.play();
+        if (localAudioRef.current) {
+          localAudioRef.current.srcObject = localStream;
+          localAudioRef.current.muted = true;
+          localAudioRef.current.addEventListener('loadedmetadata', () => {
+            localAudioRef.current!.play();
           });
         }
 
@@ -73,11 +73,11 @@ export default function ShowVideoCallDisplayer({
 
           call.on('stream', (stream) => {
             console.log('I am a caller ');
-            if (remoteVideoRef.current) {
-              remoteVideoRef.current.srcObject = stream;
-              // setRemoteVideoStream(stream);
-              remoteVideoRef.current.addEventListener('loadedmetadata', () => {
-                remoteVideoRef.current!.play();
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.srcObject = stream;
+              // setRemoteaudioStream(stream);
+              remoteAudioRef.current.addEventListener('loadedmetadata', () => {
+                remoteAudioRef.current!.play();
               });
             }
           });
@@ -98,11 +98,11 @@ export default function ShowVideoCallDisplayer({
             call.answer(localStream);
             call.on('stream', (stream) => {
               console.log('I am a listener ');
-              if (remoteVideoRef.current) {
-                remoteVideoRef.current.srcObject = stream;
-                //  setRemoteVideoStream(stream);
-                remoteVideoRef.current.addEventListener('loadedmetadata', () => {
-                  remoteVideoRef.current!.play();
+              if (remoteAudioRef.current) {
+                remoteAudioRef.current.srcObject = stream;
+                //  setRemoteaudioStream(stream);
+                remoteAudioRef.current.addEventListener('loadedmetadata', () => {
+                  remoteAudioRef.current!.play();
                 });
               }
             });
@@ -131,8 +131,8 @@ export default function ShowVideoCallDisplayer({
   useEffect(() => {
     socket.on('RemotePeerVideoCallEnd', (data) => {
       const { callEndedBy, roomId, peer } = data;
-      localVideoRef.current && (localVideoRef.current.srcObject = null);
-      videoStream && videoStream.getTracks().forEach((track) => track.stop());
+      localAudioRef.current && (localAudioRef.current.srcObject = null);
+      audioStream && audioStream.getTracks().forEach((track) => track.stop());
       setCaller({} as User);
       localPeer!.destroy(); // distory localPeer.
       setLocalPeer(null);
@@ -141,9 +141,9 @@ export default function ShowVideoCallDisplayer({
 
     socket.on('VideoCallRejected', (data) => {
       const { callRejectedBy, roomId, peer } = data;
-      localVideoRef.current && (localVideoRef.current.srcObject = null);
-      videoStream &&
-        videoStream.getTracks().forEach((track) => {
+      localAudioRef.current && (localAudioRef.current.srcObject = null);
+      audioStream &&
+        audioStream.getTracks().forEach((track) => {
           track.stop();
         });
       localPeer!.destroy(); // distory localPeer.
@@ -157,13 +157,13 @@ export default function ShowVideoCallDisplayer({
       setIsStillNotAnswered(false);
       // setCaller(caller);
     });
-  }, [videoStream]);
+  }, [audioStream]);
 
   // handlers
   const onMic = () => {
     setMicMuted(!micMuted);
-    // if (localVideoRef.current) {
-    //   localVideoRef.current.srcObject!.getAudioTracks()[0].enabled = !micMuted;
+    // if (localAudioRef.current) {
+    //   localAudioRef.current.srcObject!.getAudioTracks()[0].enabled = !micMuted;
     // }
   };
 
@@ -174,12 +174,12 @@ export default function ShowVideoCallDisplayer({
   const onLeaveVideoCall = () => {
     // close remote peer's user media as well.
 
-    localVideoRef.current && (localVideoRef.current.srcObject = null);
-    remoteVideoRef.current && (remoteVideoRef.current.srcObject = null);
+    localAudioRef.current && (localAudioRef.current.srcObject = null);
+    remoteAudioRef.current && (remoteAudioRef.current.srcObject = null);
 
     // remove streams;
-    videoStream && videoStream.getTracks().forEach((track) => track.stop());
-    //  remoteVideoStream && remoteVideoStream.getTracks().forEach((track) => track.stop());
+    audioStream && audioStream.getTracks().forEach((track) => track.stop());
+    //  remoteaudioStream && remoteaudioStream.getTracks().forEach((track) => track.stop());
 
     setCaller({} as User);
     localPeer!.destroy();
@@ -199,7 +199,7 @@ export default function ShowVideoCallDisplayer({
     <Draggable axis={isWide ? 'x' : 'both'}>
       <div className={` ${isWide ? 'w-full md:2/3 lg:w-1/2 h-full' : 'w-1/3 md:w-1/4 lg:1/5 h-1/3'}  p-sm z-40 text-sm font-mono text-white fixed top-0 left-1/2 transform -translate-x-1/2 -translate-y-0 rounded-md`}>
         {/* remote video feed */}
-        {user.userId !== caller.userId ? <video ref={remoteVideoRef} src='' className='bg-black min-w-full min-h-full w-full h-full object-cover  rounded-xl' /> : !isStillNotAnswered && <video ref={remoteVideoRef} src='' className='bg-black min-w-full min-h-full w-full h-full object-cover  rounded-xl' />}
+        {user.userId !== caller.userId ? <video ref={remoteAudioRef} src='' className='bg-black min-w-full min-h-full w-full h-full object-cover  rounded-xl' /> : !isStillNotAnswered && <video ref={remoteAudioRef} src='' className='bg-black min-w-full min-h-full w-full h-full object-cover  rounded-xl' />}
         {isStillNotAnswered && user.userId === caller.userId && (
           <div className={`flex gap-md flex-col items-center justify-center h-full bg-black`}>
             <span className='text-md text-gray-300'>{friend.name}</span>
@@ -208,7 +208,7 @@ export default function ShowVideoCallDisplayer({
         )}
         {/* local video feed  */}
         <Draggable bounds='parent'>
-          <video ref={localVideoRef} src='' className={` absolute top-5 right-5 h-[150px] w-[150px] shadow-default  rounded-xl object-cover ${!isWide && 'hidden'}`} />
+          <video ref={localAudioRef} src='' className={` absolute top-5 right-5 h-[150px] w-[150px] shadow-default  rounded-xl object-cover ${!isWide && 'hidden'}`} />
         </Draggable>
         {/* controls */}
         {isWide && (

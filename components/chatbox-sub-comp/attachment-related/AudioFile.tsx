@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { RiPlayFill, RiPauseFill } from 'react-icons/ri';
 import { Attachment } from '@/app/ChatContext';
 import { formatFileSize, formatTime } from '@/app/util.fns';
+import AudioPlayer from '@/components/AudioPlayer';
 // import AudioVisualizer from '@/components/AudioVisualizer';
 
 export default function AudioFile({ attachment }: { attachment: Attachment }) {
@@ -67,27 +68,32 @@ export default function AudioFile({ attachment }: { attachment: Attachment }) {
 
   return (
     <div className='p-lg'>
-      <div className='flex gap-xs items-center'>
-        <button onClick={onAudio} className='inline-block p-lg rounded-full bg-teal-400'>
-          {paused ? <RiPlayFill size={20} className='text-white' /> : <RiPauseFill size={20} className='text-white' />}
-        </button>
-        <div className='flex flex-col  '>
-          <div className='text-skin-muted break-all font-mono text-xs'> {attachment.name.toLocaleLowerCase()}</div>
-          {ended && (
-            <div className='flex items-center gap-xs text-xs text-skin-muted w-full'>
-              <span>{formatDuration(currentTime)} </span> &bull;<span>{formatFileSize(attachment.size!)}</span>
-            </div>
+      {false && (
+        <div className='flex gap-xs items-center'>
+          {false && (
+            <button onClick={onAudio} className='inline-block p-lg rounded-full bg-teal-400'>
+              {paused ? <RiPlayFill size={20} className='text-white' /> : <RiPauseFill size={20} className='text-white' />}
+            </button>
           )}
-          {!ended && (
-            <div className='flex items-center gap-xs text-xs text-skin-muted'>
-              <span className='text-teal-400'>{formatDuration(currentTime)}</span>
-              <input type='range' id='progress' name='progress' min={0} max={duration} value={currentTime} onChange={(e) => (audioRef.current!.currentTime = Number(e.target.value))} step='0.01' className='bg-teal-500  h-1 w-full ' />
-              {/* <AudioVisualizer src={attachment.url} /> */}
-            </div>
-          )}
+          <div className='flex flex-col  '>
+            <div className='text-skin-muted break-all font-mono text-xs'> {attachment.name.toLocaleLowerCase()}</div>
+            {ended && false && (
+              <div className='flex items-center gap-xs text-xs text-skin-muted w-full'>
+                <span>{formatDuration(currentTime)} </span> &bull;<span>{formatFileSize(attachment.size!)}</span>
+              </div>
+            )}
+            {!ended && false && (
+              <div className='flex items-center gap-xs text-xs text-skin-muted'>
+                <span className='text-teal-400'>{formatDuration(currentTime)}</span>
+                <input type='range' id='progress' name='progress' min={0} max={duration} value={currentTime} onChange={(e) => (audioRef.current!.currentTime = Number(e.target.value))} step='0.01' className='bg-teal-500  h-1 w-full ' />
+                {/* <AudioVisualizer src={attachment.url} /> */}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       <audio ref={audioRef} src={attachment.url} className='mt-xs' />
+      <AudioPlayer src={attachment.url} />
     </div>
   );
 }

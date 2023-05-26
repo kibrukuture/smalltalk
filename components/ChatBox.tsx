@@ -31,28 +31,26 @@ import * as linkify from 'linkifyjs';
 import Peer, { MediaConnection } from 'peerjs';
 
 export default function ChatBox() {
+  // local storage
   const user = JSON.parse(localStorage.getItem('user')!) as User;
 
   // state
   const [showAttachment, setShowAttachment] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
-  const [linkInMessage, setLinkInMessage] = useState({
-    isAny: false,
-    url: '',
-  });
   const [showBinaryFileModal, setShowBinaryFileModal] = useState(false);
   const [binFile, setBinFile] = useState({} as BinFile);
   const [binFileLoading, setBinFileLoading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [innerWidth, setInnerWidth] = useState(0);
-  // const [showVideoCallDisplayer, setShowVideoCallDisplayer] = useState(false);
   const [showAnsweringAudioCall, setShowAnsweringAudioCall] = useState(false);
   const [isAudioBeingRecorded, setIsAudioBeingRecorded] = useState(false);
   const [audioRecorder, setAudioRecorder] = useState<MediaRecorder | null>(null);
   const [audioStream, setAudioStream] = useState<MediaStream>();
   const [showCapturePicture, setShowCapturePicture] = useState(false);
-  const [reactWithEmoji, setReactWithEmoji] = useState({} as EmojiType);
-  const [videoCall, setVideoCall] = useState<MediaConnection | null>(null);
+  const [linkInMessage, setLinkInMessage] = useState({
+    isAny: false,
+    url: '',
+  });
   const [remotePeerOnlineStatus, setRemotePeerOnlineStatus] = useState({
     isOnline: false,
     remotePeer: {} as User,
@@ -86,7 +84,7 @@ export default function ChatBox() {
 
   // context
   const { currentOpenChatId, setIsChatRoomTapped, rooms, setRooms, wallpaper } = useContext(ChatContext);
-  const { setLocalPeer, localPeer, setCaller, showVideoCallDisplayer, setShowVideoCallDisplayer, setRemotePeerVideoCalling, remotePeerVideoCalling } = useContext(ChatRoomContext);
+  const { setLocalPeer, localPeer, caller, setCaller, showVideoCallDisplayer, setShowVideoCallDisplayer, setRemotePeerVideoCalling, remotePeerVideoCalling } = useContext(ChatRoomContext);
 
   let currentRoom: Room;
   if (rooms.size) currentRoom = rooms.get(currentOpenChatId as string)!;
@@ -96,6 +94,7 @@ export default function ChatBox() {
   const chatContentRef = useRef<HTMLDivElement>(null);
   const outGoingCallAudioRef = useRef<HTMLAudioElement>(null);
   const audioRecordDataRef = useRef([] as Blob[]);
+  const invisibleStartCallBtnRef = useRef<HTMLButtonElement>(null);
 
   // scroll to bottom
   useEffect(() => {
@@ -148,6 +147,23 @@ export default function ChatBox() {
       });
     });
 
+    socket.on('VideoCallAccepted', (data) => {
+      const { roomId } = data;
+
+      if (outGoingCallAudioRef.current) {
+        outGoingCallAudioRef.current.pause();
+        outGoingCallAudioRef.current.currentTime = 0;
+      }
+    });
+    socket.on('VideoCallRejected', (data) => {
+      const { roomId } = data;
+
+      if (outGoingCallAudioRef.current) {
+        outGoingCallAudioRef.current.pause();
+        outGoingCallAudioRef.current.currentTime = 0;
+      }
+    });
+
     return () => {
       socket.off('RemotePeerOffline');
       socket.off('RemotePeerOnline');
@@ -156,6 +172,13 @@ export default function ChatBox() {
       socket.off('EndVideoCall');
     };
   }, []);
+
+  useEffect(() => {
+    if (outGoingCallAudioRef.current && !caller.userId) {
+      outGoingCallAudioRef.current.pause();
+      outGoingCallAudioRef.current.currentTime = 0;
+    }
+  }, [caller]);
 
   // open attachment
   const onAttachment = () => {
@@ -317,7 +340,14 @@ export default function ChatBox() {
     setShowVideoCallDisplayer(true);
 
     //calling
-    // outGoingCallAudioRef.current && outGoingCallAudioRef.current.play();
+    if (invisibleStartCallBtnRef.current && outGoingCallAudioRef.current) {
+      const btn = invisibleStartCallBtnRef.current;
+
+      btn.addEventListener('click', () => {
+        outGoingCallAudioRef.current!.play();
+      });
+      btn.click();
+    }
 
     // on remote user, check if they are online or offline. if online, change calling status to Ringing.
     socket.emit('StartVideoCall', {
@@ -366,7 +396,7 @@ export default function ChatBox() {
   // });
 
   const onGetCapturePicture = (data: string, size: number) => {
-    console.log(data);
+    // console.log(data);
 
     setBinFile({
       name: 'capture.png',
@@ -379,13 +409,28 @@ export default function ChatBox() {
 
     setShowBinaryFileModal(true);
   };
+  const onGetVideoRecord = (data: string, size: number) => {
+    // console.log(data);
+
+    setBinFile({
+      name: 'record.mp4',
+      type: 'video',
+      size,
+      data: data,
+      ext: 'mp4',
+      dur: null,
+    });
+
+    data && size > 0 && setShowBinaryFileModal(true);
+  };
 
   if (!currentOpenChatId || rooms.size === 0) return <NoChatSelected />;
   return (
     <div ref={chatBoxRef} className='flex flex-col max-h-screen h-screen w-full '>
       {/* {remotePeerVideoCalling.isCalling && <Calling remotePeer={remotePeerVideoCalling} setShowVideoCallDisplayer={setShowVideoCallDisplayer} setRemotePeerVideoCalling={setRemotePeerVideoCalling} />} */}
       {imageViewer.show && <ImageViewer imageViewer={imageViewer} setImageViewer={setImageViewer} />}
-      {false && <audio ref={outGoingCallAudioRef} loop={true} src='/sound-effects/caller.wav' preload='auto' />}
+      <audio ref={outGoingCallAudioRef} loop={true} src='/sound-effects/caller.wav' preload='auto' className='sr-only' />
+      <button ref={invisibleStartCallBtnRef} className='sr-only'></button>
       {forwardMessage.show && <ForwardMessage forwardMessage={forwardMessage} setForwardMessage={setForwardMessage} />}
       <div className='flex items-center   '>
         {/* arrow back button   */}
@@ -430,7 +475,7 @@ export default function ChatBox() {
       </div>
 
       <div className='grow relative overflow-y-auto scroll-smooth'>
-        {showCapturePicture && <CapturePicture setShowCapturePicture={setShowCapturePicture} onGetCapturePicture={onGetCapturePicture} />}
+        {showCapturePicture && <CapturePicture setShowCapturePicture={setShowCapturePicture} onGetCapturePicture={onGetCapturePicture} onGetVideoRecord={onGetVideoRecord} />}
         <ContextMenuTrigger id={currentOpenChatId} className='grow'>
           <div
             style={{
@@ -467,7 +512,7 @@ export default function ChatBox() {
         </ContextMenuTrigger>
 
         {showAnsweringAudioCall && <AnsweringAudioCall />}
-        {showVideoCallDisplayer && <VideoCallDisplayer setShowVideoCallDisplayer={setShowVideoCallDisplayer} remotePeerOnlineStatus={remotePeerOnlineStatus} />}
+        {showVideoCallDisplayer && <VideoCallDisplayer setShowVideoCallDisplayer={setShowVideoCallDisplayer} remotePeerOnlineStatus={remotePeerOnlineStatus} outGoingCallAudioRef={outGoingCallAudioRef} />}
       </div>
       {/* bottom part  */}
       <div className='flex flex-col  '>

@@ -16,10 +16,28 @@ export default function Calling() {
   // ref to audio
   const playAudioRef = useRef<HTMLButtonElement>(null);
   const incomingCallAudioRef = useRef<HTMLAudioElement>(null);
+  // const invisibleBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (incomingCallAudioRef.current) {
-      incomingCallAudioRef.current.play();
+    if (typeof window !== 'undefined') {
+      if (incomingCallAudioRef.current && playAudioRef.current) {
+        const btn = playAudioRef.current;
+
+        btn.addEventListener('click', () => {
+          incomingCallAudioRef.current!.play();
+        });
+        btn.click();
+      }
+      socket.on('RemotePeerVideoCallEnd', (data) => {
+        const { roomId } = data;
+
+        // remote peer starts calling & closes
+        setRemotePeerVideoCalling({
+          isCalling: false,
+          peer: {} as User,
+          roomId: '',
+        });
+      });
     }
   }, []);
 
@@ -72,6 +90,7 @@ export default function Calling() {
   };
   return (
     <Draggable>
+      {/* <button className='sr-only' ref={invisibleBtnRef}></button> */}
       <div className='z-50 cursor-auto  flex gap-sm rounded-full items-center bg-black text-skin-muted fixed top-5 right-5 p-lg '>
         <div className='relative'>
           <button className='relative overflow-hidden text-skin-muted w-8 h-8 shadow-default flex items-center justify-center   rounded-full '>
