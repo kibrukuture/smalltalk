@@ -185,6 +185,15 @@ export const addNewMessage = (roomId: string, message: Message, setRooms: (rooms
   });
 };
 
+export const deleteConversation = (roomId: string, messageId: string, setRooms: (rooms: Map<string, Room>) => void) => {
+  setRooms((prev) => {
+    const newRoom = new Map<string, Room>(prev);
+    const newMessages = newRoom.get(roomId)!.messages.filter((message) => message.messageId !== messageId);
+    newRoom.get(roomId)!.messages = newMessages;
+    return newRoom;
+  });
+};
+
 export function getFileTypeColors(fileType: string) {
   const fileColors: {
     [key: string]: string[];

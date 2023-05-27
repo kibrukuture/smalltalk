@@ -1,6 +1,10 @@
+// configs & util fns
 import { Server } from 'socket.io';
 import { app } from '../index.js';
 import { createServer } from 'http';
+import { lastSeen } from './datastr/index.js';
+
+// handlers
 import onDisconnect from './sockets/handlers/ondisconnect.js';
 import onUserAuth from './sockets/handlers/onUserAuth.js';
 import onUserSetup from './sockets/handlers/onUserSetup.js';
@@ -11,9 +15,9 @@ import onAcceptOrDeclineFriendRequest from './sockets/handlers/onAcceptOrDecline
 import onStartVideoCall from './sockets/handlers/onStartVideoCall.js';
 import onVideoCallReject from './sockets/handlers/onVideoCallReject.js';
 import onEndVideoCall from './sockets/handlers/onEndVideoCall.js';
-import { lastSeen } from './datastr/index.js';
 import onVideoCallAccepted from './sockets/handlers/onVideoCallAccepted.js';
 import onRemotePeerVideoCallEnd from './sockets/handlers/onRemotePeerVideoCallEnd.js';
+import onDeleteConversation from './sockets/handlers/onDeleteConversation.js';
 
 // server setup
 const server = createServer(app);
@@ -40,6 +44,7 @@ io.on('connection', (socket) => {
   socket.on('EndVideoCall', (data) => onEndVideoCall(socket, data)); // end video call
   socket.on('VideoCallAccepted', (data) => onVideoCallAccepted(socket, data)); // end video call
   socket.on('RemotePeerVideoCallEnd', (data) => onRemotePeerVideoCallEnd(socket, data)); // end video call
+  socket.on('DeleteConversation', (data) => onDeleteConversation(socket, data));
   socket.on('disconnect', () => onDisconnect(socket, lastSeen)); // disconnect
 });
 

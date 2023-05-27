@@ -471,3 +471,64 @@ export async function scrapWebsite(req, res) {
     });
   }
 }
+
+export async function getAllConnectedFriendsMiddleware(req, res) {
+  const { userId } = req.params; // get userId
+
+  const connectedFriendsQuery = await supabase.from('privateroom').select('*').eq('accepted', true).eq('inactive', false).or(`userOneId.eq.${userId}, userTwoId.eq.${userId}`);
+
+  if (connectedFriendsQuery.error) {
+    return res.status(401).json({
+      message: connectedFriendsQuery.error.message,
+      status: 'error',
+    });
+  }
+
+  if (connectedFriendsQuery.data.length === 0) {
+    return res.status(200).json({
+      status: 'ok',
+      message: 'no connected friends',
+      data: [],
+    });
+  }
+
+  // on success
+  res.status(200).json({
+    status: 'ok',
+    message: 'all connected friends retrieved',
+    data: connectedFriendsQuery.data,
+  });
+}
+
+export async function determineUsercolumnInPrivateRoom(userId) {
+  // the fn returns either (userOneId or userTwoId)
+  const whichUser = await supabase.from('privateroom').select('*').or(`userOneId.eq.${userId}, userTwoId.eq.${userId}`).single();
+
+  // check if room does not exist.
+  if (whichUser.error) {
+    return {
+      status: 'error',
+      message: whichUser.error.message,
+    };
+  }
+
+  if (!whichUser.data) {
+    return {
+      status: 'error',
+      message: 'room does not exist',
+    };
+  }
+
+  let whichUserId;
+  if (whichUser.data.userOneId == userId) {
+    whichUserId = 'userTwoId';
+  } else {
+    whichUserId = 'userOneId';
+  }
+
+  return {
+    status: 'ok',
+    message: 'found',
+    data: whichUserId,
+  };
+}

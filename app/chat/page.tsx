@@ -11,7 +11,7 @@ import Profile from '@/components/Profile';
 import Notificstion from '@/components/Notification';
 import Settings from '@/components/Settings';
 import { useRouter } from 'next/navigation';
-import { addNewMessage } from '../util.fns';
+import { addNewMessage, deleteConversation } from '../util.fns';
 import { User } from '../ChatContext';
 import Calling from '@/components/Calling';
 import Peer from 'peerjs';
@@ -171,6 +171,14 @@ export default function Chat() {
       console.log('local video stream: ', localUserVideoStream && localUserVideoStream.getTracks());
     });
 
+    socket.on('onDeleteConversation', (data) => {
+      const { messageId, roomId, deletedBy, friend } = data;
+      // roomId: string, messageId: string, setRooms: (rooms: Map<string, Room>) => void
+      console.log('onDeleteConversation', data);
+
+      deleteConversation(roomId, messageId, setRooms);
+    });
+
     // remote peer video call ended
     // socket.on('RemotePeerVideoCallEnd', (data) => {
     //   const { callEndedBy, roomId, peer } = data;
@@ -194,6 +202,7 @@ export default function Chat() {
   // console.log(':Component Rendered:', '# of rooms are: ', rooms.get(currentOpenChatId)?.messages.length);
   if (!rooms.size && isAllChatsLoading) return <div className='h-screen w-full bg-black flex items-center justify-center text-skin-base text-2xl font-bold text-center  '>loading</div>;
 
+  // console.log(rooms);
   return (
     <ChatRoomContext.Provider value={{ remotePeerVideoCalling, setRemotePeerVideoCalling, showVideoCallDisplayer, setShowVideoCallDisplayer, localUserVideoStream, setLocalUserVideoStream, caller, setCaller, isCallAnswered, setIsCallAnswered, localPeer, setLocalPeer }}>
       <div className='max-h-screen h-screen w-full flex flex-col-reverse md:flex md:flex-row'>

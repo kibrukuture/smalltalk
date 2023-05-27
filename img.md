@@ -102,3 +102,141 @@ console.log(target, prop, receiver);
 return Reflect.get(...arguments);
 
     }
+
+import React, {useState, useEffect, useRef} from 'react'
+import ReactDOM from 'react-dom'
+
+const audioUrl =
+'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3'
+function App() {
+// handler fns
+const [seekTo, setSeekTo] = useState(0)
+const [barWidth, setBarWidth] = useState(0)
+const [currentTime, setCurrentTime] = useState(0)
+const [isMouseDown, setIsMouseDown] = useState(false)
+
+const stillBarRef = useRef(null)
+const audioRef = useRef(null)
+
+useEffect(() => {
+let width = 0
+if (stillBarRef.current) {
+width = stillBarRef.current.getBoundingClientRect().width
+setBarWidth(width)
+}
+
+    if (audioRef.current) {
+      const audio = audioRef.current
+      audio.play()
+
+      audio.addEventListener('timeupdate', (e) => {
+        // console.log((audio.currentTime / audio.duration) * width)
+
+        setSeekTo((audio.currentTime / audio.duration) * width)
+        setCurrentTime(audio.currentTime * 1000)
+      })
+    }
+
+    document.addEventListener('mouseup', () => setIsMouseDown(false))
+
+}, [])
+
+const onMouseMove = (e) => {
+const clientRect = e.currentTarget.getBoundingClientRect()
+const {width, left} = clientRect
+const progress = (e.clientX - left) / width
+
+    // console.log(Math.ceil(progress * width))
+    if (isMouseDown) {
+      setSeekTo(Math.ceil(progress * width))
+      setBarWidth(width)
+      const audio = audioRef.current
+      audio.play()
+    }
+
+}
+
+// document.addEventListener('keypress', (e) => {
+// console.log(barWidth, seekTo)
+// // if (e.key === 'ArrowRight') setSeekTo(1)
+// // if (e.key === 'ArrowLeft') setSeekTo(1)
+// })
+
+const onPlayingBarReposition = (e) => {
+const audio = audioRef.current
+
+    const clientRect = e.currentTarget.getBoundingClientRect()
+
+    const {width, left} = clientRect
+
+    const progress = (e.clientX - left) / width
+
+    audio.currentTime = progress * audio.duration
+
+}
+
+console.log(isMouseDown)
+return (
+
+<div
+style={{
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        height: '100vh',
+        width: '100%',
+        padding: '0',
+        margin: '0',
+        gap: '.5rem',
+      }} >
+{/_ still bar _/}
+<div
+onMouseMove={onMouseMove}
+onMouseDown={() => setIsMouseDown(true)}
+onMouseUp={() => setIsMouseDown(false)}
+onClick={onPlayingBarReposition}
+ref={stillBarRef}
+tabIndex="0"
+style={{
+          height: '4px',
+          width: '80%',
+          background: 'black',
+          padding: '1px',
+          paddingInline: '2px',
+          borderRadius: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+        }} >
+{/_ playing bar _/}
+<div
+style={{
+            height: '100%',
+            width: seekTo + 'px',
+            background: 'teal',
+            borderRadius: '1rem',
+          }} ></div>
+</div>
+<span
+style={{
+          fontSize: 'small',
+          fontFamily: 'monospace',
+        }} >
+{formatTime(currentTime)}
+</span>
+<audio src={audioUrl} ref={audioRef} />
+</div>
+)
+}
+ReactDOM.render(<App />, document.getElementById('root'))
+
+function formatTime(milliseconds) {
+const hours = Math.floor(milliseconds / 3600000)
+const minutes = Math.floor((milliseconds % 3600000) / 60000)
+const seconds = Math.floor((milliseconds % 60000) / 1000)
+
+const formattedHours = hours > 0 ? String(hours).padStart(2, '0') + ':' : ''
+const formattedMinutes = String(minutes).padStart(2, '0')
+const formattedSeconds = String(seconds).padStart(2, '0')
+
+return `${formattedHours}${formattedMinutes}:${formattedSeconds}`
+}

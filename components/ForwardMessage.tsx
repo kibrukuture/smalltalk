@@ -1,27 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { Message } from '@/app/ChatContext';
+import { useEffect, useRef, useState, useContext } from 'react';
+import { Message, ChatContext } from '@/app/ChatContext';
 import { RiCloseFill, RiShareForward2Line } from 'react-icons/ri';
 import { getInitials, getColorFromName } from '@/app/util.fns';
-
-// create a list of friends with different names and usernames
-const initialProp = [
-  {
-    name: 'Kibru J. Kuture',
-    username: '@kibrukuture',
-    id: '1',
-  },
-  {
-    name: 'Adam K. Matt',
-    username: '@adamk.matt',
-    id: '2',
-  },
-  {
-    name: 'Larry M. Page',
-    username: '@larrypage',
-
-    id: '3',
-  },
-];
+import { User } from '@/app/ChatContext';
 
 export default function ForwardMessage({
   setForwardMessage,
@@ -40,16 +21,57 @@ export default function ForwardMessage({
     to: string[];
   };
 }) {
+  // from local storage
+
+  const user = JSON.parse(localStorage.getItem('user')!) as User;
+  const localStorageFriendsInRoom = (JSON.parse(localStorage.getItem('friends')!) as { friend: User; roomId: string }[]) || []; // localstorage.
+
+  //states
   const [searchItem, setSearchItem] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
-  const [friends, setFriends] = useState(initialProp);
+  const [friendsInRoom, setFriendsInRoom] = useState<{ friend: User; roomId: string }[]>([]);
+  const [filteredFriendsInRoom, setFilteredFriendsInRoom] = useState<{ friend: User; roomId: string }[]>([]);
+
+  // consume context
+  const { rooms } = useContext(ChatContext);
+
+  useEffect(() => {
+    // all-connected-friends
+    if (localStorageFriendsInRoom.length > 0) {
+      setFriendsInRoom(localStorageFriendsInRoom);
+      setFilteredFriendsInRoom(localStorageFriendsInRoom);
+      return;
+    }
+    (async function () {
+      const res = await fetch(`http://localhost:4040/api/user/all-connected-friends/${user.userId}`);
+
+      const data = await res.json();
+
+      if (data.status === 'ok') {
+        // reset db.
+        //
+
+        console.log(data);
+        const tempFriendsInRoom = data.data.map((room) => {
+          return {
+            friend: rooms.get(room.roomId)?.friend,
+            roomId: room.roomId,
+          };
+        });
+        localStorage.setItem('friends', JSON.stringify(tempFriendsInRoom)); // store in localstorage.
+        setFriendsInRoom(tempFriendsInRoom); // set state.
+        setFilteredFriendsInRoom(tempFriendsInRoom); // set state.
+      } else {
+        console.log('Error in retrieveing users.');
+      }
+    })();
+  }, []);
 
   //   handlers
   const onFilterFriends = (e: React.FormEvent<HTMLInputElement>) => {
     const { value } = e.currentTarget;
-    const filteredFriends = initialProp.filter((friend) => friend.name.toLowerCase().includes(value.toLowerCase()) || friend.username.toLowerCase().includes(value.toLowerCase()));
-    console.log(filteredFriends);
-    setFriends(filteredFriends);
+    const tempFilteredFriendsInRoom = friendsInRoom.filter((friendInRoom) => friendInRoom.friend.name.toLowerCase().includes(value.toLowerCase()) || friendInRoom.friend.userName.toLowerCase().includes(value.toLowerCase()));
+    setFilteredFriendsInRoom(tempFilteredFriendsInRoom);
     setSearchItem(value);
   };
 
@@ -60,6 +82,7 @@ export default function ForwardMessage({
     //   reset
     setForwardMessage(() => ({ message: {} as Message, to: [], show: false }));
   };
+
   return (
     <div
       id='forward-message-container'
@@ -80,46 +103,36 @@ export default function ForwardMessage({
             <p>Forward Message</p>
           </div>
         </div>
-        {/* search friend */}
-
+        {/* search friend input field */}
         <div className='flex items-center gap-md '>
           <input value={searchItem} onChange={onFilterFriends} type='text' className='w-full  p-lg rounded-md  text-skin-base border-2 border-gray-700 outline-none focus:border-teal-400 focus:outline-none transition duration-500 bg-transparent placeholder:text-gray-500' placeholder='find to whom you want to forward the message' />
         </div>
 
         {/* list of friends */}
-
         <div className='mt-10 font-mono select-none flex gap-md flex-col'>
-          {friends.map((friend) => (
-            <div className=''>
-              <div key={friend.id} className='flex flex-column items-center gap-2'>
-                {/* a friend */}
-                <label className='flex items-center gap-md cursor-pointer w-full'>
+          {filteredFriendsInRoom.map((friendInRoom) => (
+            <div key={friendInRoom.friend.userId} className='flex flex-column items-center gap-2'>
+              {/* a friend */}
+              <label className='flex items-center gap-md cursor-pointer w-full'>
+                <div className=''>
+                  <input type='checkbox' id={friendInRoom.friend.userId} onChange={(e) => (selectedFriends.includes(friendInRoom.friend.userName) ? setSelectedFriends(selectedFriends.filter((item) => item !== friendInRoom.friend.userName)) : setSelectedFriends([...selectedFriends, friendInRoom.friend.userName]))} />
+                </div>
+                <div className='flex gap-xs items-center'>
+                  <p className={`relative overflow-hidden text-skin-muted min-w-10 min-h-10 w-10 h-10  flex items-center justify-center   rounded-full flex-wrap  `} style={{ backgroundColor: getColorFromName(friendInRoom.friend.name), color: 'whitesmoke' }}>
+                    {false && <img className='object-cover h-10 w-10 ' src='' alt='' />}
+                    {!false && <span className='text-xs  w-10 h-10 flex items-center justify-center'>{getInitials(friendInRoom.friend.name)}</span>}
+                  </p>
                   <div className=''>
-                    <input type='checkbox' id={friend.id} onChange={(e) => (selectedFriends.includes(friend.username) ? setSelectedFriends(selectedFriends.filter((item) => item !== friend.username)) : setSelectedFriends([...selectedFriends, friend.username]))} />
+                    <p className=' '>{friendInRoom.friend.name}</p>
+                    <p className='text-xs text-skin-muted'>{friendInRoom.friend.userName}</p>
                   </div>
-                  <div className='flex gap-xs items-center'>
-                    <p className={`relative overflow-hidden text-skin-muted min-w-10 min-h-10 w-10 h-10  flex items-center justify-center   rounded-full flex-wrap  `} style={{ backgroundColor: getColorFromName(friend.name), color: 'whitesmoke' }}>
-                      {false && <img className='object-cover h-10 w-10 ' src='' alt='' />}
-                      {!false && <span className='text-xs  w-10 h-10 flex items-center justify-center'>{getInitials(friend.name)}</span>}
-                    </p>
-                    <div className=''>
-                      <p className=' '>{friend.name}</p>
-                      <p className='text-xs text-skin-muted'>{friend.username}</p>
-                    </div>
-                  </div>
-                </label>
-              </div>
+                </div>
+              </label>
             </div>
           ))}
-          {friends.length === 0 && (
-            <p className='text-xs text-skin-muted text-center'>
-              <img src='/illustrations/no-data.svg' alt='' />
-              No friends found
-            </p>
-          )}
+          {filteredFriendsInRoom.length === 0 && <p className='text-xs text-skin-muted text-center'>No friends found</p>}
         </div>
         {/* selected friends */}
-
         <div className='flex items-center gap-sm mt-10 flex-wrap'>
           {selectedFriends.map((friend) => (
             <p key={friend} className='text-xs text-gray-100 p-md bg-green-300 bg-opacity-20 rounded-md backdrop-blur-sm'>

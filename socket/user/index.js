@@ -1,4 +1,4 @@
-import { logInCheckUserMiddleware, updateUserMiddleware, deleteUserAccountMiddleware, getAllFriendRequestsMiddleware, acceptDeclineRequestMiddleware, declinedFriendRequestsMiddleware, uploadProfilePictureMiddleware, getUserProfileMiddleware } from '../controller/index.js';
+import { logInCheckUserMiddleware, updateUserMiddleware, deleteUserAccountMiddleware, getAllFriendRequestsMiddleware, acceptDeclineRequestMiddleware, declinedFriendRequestsMiddleware, uploadProfilePictureMiddleware, getUserProfileMiddleware, getAllConnectedFriendsMiddleware } from '../controller/index.js';
 import express from 'express';
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/friend-requests/:userId', getAllFriendRequestsMiddleware);
 router.get('/', logInCheckUserMiddleware);
 router.get('/profile/:id', getUserProfileMiddleware);
-
+router.get('/all-connected-friends/:userId', getAllConnectedFriendsMiddleware);
 router.put('/update', updateUserMiddleware);
 router.post('/accept-decline-request', acceptDeclineRequestMiddleware);
 router.post('/declined_friend_requests/:id', declinedFriendRequestsMiddleware);

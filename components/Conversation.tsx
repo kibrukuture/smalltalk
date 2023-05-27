@@ -11,6 +11,7 @@ import VideoFile from './chatbox-sub-comp/attachment-related/VideoFile';
 import DocumentFile from './chatbox-sub-comp/attachment-related/DocumentFile';
 import { ContextMenu, MenuItem, ContextMenuTrigger } from 'react-contextmenu';
 import RepliedMessage from './RepliedMessage';
+import socket from '@/app/socket.config';
 
 // import ImageViewer from './ImageViewer';
 
@@ -223,6 +224,13 @@ export const ContextMenuList = ({
     // ;end
 
     // fire emit event to server; (if the other peer has not seen the message, it is deletable)
+
+    socket.emit('DeleteConversation', {
+      messageId: message.messageId,
+      roomId: currentOpenChatId,
+      deletedBy: user,
+      friend: rooms.get(currentOpenChatId)?.friend,
+    });
   };
 
   return (
@@ -272,12 +280,14 @@ export const ContextMenuList = ({
             <span>Forward</span>
           </button>
         </MenuItem>
-        <MenuItem data={{ delete: 'delete' }} onClick={onDeleteConversation} className='grow' key='delete'>
-          <button className='flex h-full   w-full items-center hover:bg-skin-hover grow px-md gap-md'>
-            <RiDeleteBinLine />
-            <span>Delete</span>
-          </button>
-        </MenuItem>
+        {message.senderId === user.userId && (
+          <MenuItem data={{ delete: 'delete' }} onClick={onDeleteConversation} className='grow' key='delete'>
+            <button className='flex h-full   w-full items-center hover:bg-skin-hover grow px-md gap-md'>
+              <RiDeleteBinLine />
+              <span>Delete</span>
+            </button>
+          </MenuItem>
+        )}
       </div>
     </div>
   );

@@ -1,78 +1,168 @@
-import { useState, useRef, MouseEvent, MouseEventHandler, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RiPlayMiniFill, RiPauseMiniFill } from 'react-icons/ri';
 
-export default function AudioPlayer({ src }: { src: string }) {
-  //   //   states
-  //   const [paused, setPaused] = useState(true);
-  //   const [playingBarWidth, setPlayingBarWidth] = useState(0);
+const url = 'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3';
+export default function AudioPlayer({ audioUrl = url }) {
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
 
-  //   //   ref
-  //   const stillBarRef = useRef<HTMLDivElement>(null);
-  //   const audioRef = useRef<HTMLAudioElement>(null);
-  //   //   const playingBarRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef(null);
+  const audioRef = useRef(null);
 
-  //   useEffect(() => {
-  //     //get width of still bar
-  //     const stillBar = stillBarRef.current;
-  //     const audio = audioRef.current;
-  //     if (stillBar && audio) {
-  //       const stillBarWidth = stillBar?.getBoundingClientRect().width;
+  const onProgressClick = (e) => {
+    const progressBar = e.currentTarget;
+    const clickOffsetX = e.pageX - progressBar.getBoundingClientRect().left;
+    const progressBarWidth = progressBar.offsetWidth;
+    const newProgress = (clickOffsetX / progressBarWidth) * 100;
 
-  //       audio.addEventListener('timeupdate', () => {
-  //         const currentTime = audio.currentTime;
-  //         const duration = audio.duration;
-  //         const percent = (currentTime / duration) * 100;
-  //         console.log(percent);
-  //         // setPlayingBarWidth(percent * stillBarWidth);
-  //       });
-  //     }
-  //   }, []);
-  //   handlers
-  //   const onAudioPlay = () => {
-  //     setPaused(!paused);
-  //     const audio = audioRef.current;
-  //     if (audio) {
-  //       if (paused) {
-  //         audio.play();
-  //       } else {
-  //         audio.pause();
-  //       }
-  //     }
-  //   };
+    const audio = audioRef.current;
+    if (audio) {
+      let currentTime = (newProgress / 100) * audio.duration;
+      audio.currentTime = currentTime;
+      setCurrentTime(currentTime);
+      setPaused(false);
+      audio.play();
+    }
+    setProgress(newProgress);
+  };
 
-  //
-  //   const onStillBarMouseOver = (e: MouseEventHandler<HTMLDivElement>) => {
-  //     console.log(e.target.getBoundingClientRect());
-  //   };
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (audio) {
+      audio.addEventListener('timeupdate', () => {
+        setCurrentTime(audio.currentTime);
+
+        let width = barRef.current.getBoundingClientRect().width;
+        setProgress(audio.currentTime * width);
+
+        const prog = width * (audio.currentTime / audio.duration);
+        setProgress((prog / width) * 100);
+      });
+
+      audio.addEventListener('ended', () => {
+        setCurrentTime(0);
+        audio.currentTime = 0;
+        setPaused(true);
+      });
+    }
+
+    const onKeyDown = (e) => {
+      let tempProgress;
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setProgress((prevProgress) => {
+          tempProgress = Math.min(prevProgress + 2, 100);
+          fn(tempProgress, audio);
+          return tempProgress;
+        });
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setProgress((prevProgress) => {
+          tempProgress = Math.max(prevProgress - 2, 0);
+          fn(tempProgress, audio);
+          return tempProgress;
+        });
+      }
+      function fn(progress, audio) {
+        if (audio) {
+          let currentTime = (progress / 100) * audio.duration;
+          audio.currentTime = currentTime;
+          setCurrentTime(currentTime);
+          setPaused(false);
+          audio.play();
+        }
+      }
+    };
+
+    const bar = barRef.current;
+    if (bar) {
+      bar.addEventListener('keydown', onKeyDown);
+    }
+
+    return () => {
+      bar && bar.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
+  const onPlayMedia = (e) => {
+    setPaused(!paused);
+    const audio = audioRef.current;
+    if (paused) audio.play();
+    else audio.pause();
+  };
+
+  const progressBarStyles = {
+    width: '100%',
+    height: '5px',
+    border: '1px solid #ccc',
+    borderRadius: '1rem',
+    overflow: 'hidden',
+    cursor: 'pointer',
+    background: 'black',
+    display: 'flex',
+    alignItems: 'center',
+  };
+
+  const progressFillStyles = {
+    height: '100%',
+    backgroundColor: 'teal',
+    width: `${progress}%`,
+    transition: 'width 0.3s ease-in-out',
+    borderRadius: '1rem',
+    margin: 'auto 0',
+  };
+
   return (
-    <>
-      <audio id='player' controls>
-        <source src={src} type='audio/mp3' />
-        <source src={src} type='audio/ogg' />
-      </audio>
-    </>
+    <div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+        }}
+      >
+        <button
+          onClick={onPlayMedia}
+          style={{
+            display: 'flex',
+            padding: '.25rem',
+            borderRadius: '100%',
+            border: '0',
+            borderColor: 'transparent',
+            background: 'teal',
+            color: 'whitesmoke',
+          }}
+        >
+          {paused ? <RiPlayMiniFill /> : <RiPauseMiniFill />}
+        </button>
+        <div tabIndex={0} ref={barRef} style={progressBarStyles} onClick={onProgressClick}>
+          <div style={progressFillStyles}></div>
+          <audio src={audioUrl} ref={audioRef} />
+        </div>
+      </div>
+      <span
+        style={{
+          fontSize: 'small',
+          fontFamily: 'monospace',
+        }}
+      >
+        {formatTime(currentTime * 1000)}
+      </span>
+    </div>
   );
 }
 
-// /*
-//       <div className='flex flex-col gap-xs text-xs italic font-mono '>
-//         <div className='flex items-center gap-xs w-[200px]'>
-//           <audio src={src} className='sr-only' aria-label='audio player' ref={audioRef}></audio>
-//           {/* play | pause btn */}
-//           <button onClick={onAudioPlay} className='flex items-center justify-center w-8 h-8 rounded-full bg-teal-400 text-white'>
-//             {paused ? <RiPlayMiniFill /> : <RiPauseMiniFill />}
-//           </button>
-//           {/* controls */}
-//           <div className='grow flex flex-col gap-1 '>
-//             {/* audio range */}
-//             <div onMouseEnter={onStillBarMouseOver} ref={stillBarRef} className='w-full h-1 bg-black rounded-full cursor-pointer'>
-//               {/* playing part */}
-//               <div /*ref={playingBarRef}*/ className='h-full bg-teal-400 rounded-full' style={{ width: playingBarWidth }}></div>
-//             </div>
-//             {/* time */}
-//             <span className='text-xs text-gray-500 '>00:00</span>
-//           </div>
-//         </div>
-//         <p>Recording.webm</p>
-//       </div>
-// */
+function formatTime(milliseconds) {
+  const hours = Math.floor(milliseconds / 3600000);
+  const minutes = Math.floor((milliseconds % 3600000) / 60000);
+  const seconds = Math.floor((milliseconds % 60000) / 1000);
+
+  const formattedHours = hours > 0 ? String(hours).padStart(2, '0') + ':' : '';
+  const formattedMinutes = String(minutes).padStart(2, '0');
+  const formattedSeconds = String(seconds).padStart(2, '0');
+
+  return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
+}
