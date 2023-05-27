@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RiPlayMiniFill, RiPauseMiniFill } from 'react-icons/ri';
 
-const url = 'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3';
-export default function AudioPlayer({ audioUrl = url }) {
+export default function AudioPlayer({ audioUrl = '' }) {
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
 
-  const barRef = useRef(null);
-  const audioRef = useRef(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  const onProgressClick = (e) => {
+  const onProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const progressBar = e.currentTarget;
     const clickOffsetX = e.pageX - progressBar.getBoundingClientRect().left;
     const progressBarWidth = progressBar.offsetWidth;
@@ -29,12 +28,13 @@ export default function AudioPlayer({ audioUrl = url }) {
 
   useEffect(() => {
     const audio = audioRef.current;
+    const parentDiv = barRef.current;
 
-    if (audio) {
+    if (audio && parentDiv) {
       audio.addEventListener('timeupdate', () => {
         setCurrentTime(audio.currentTime);
 
-        let width = barRef.current.getBoundingClientRect().width;
+        let width = parentDiv.getBoundingClientRect()!.width;
         setProgress(audio.currentTime * width);
 
         const prog = width * (audio.currentTime / audio.duration);
@@ -48,7 +48,7 @@ export default function AudioPlayer({ audioUrl = url }) {
       });
     }
 
-    const onKeyDown = (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       let tempProgress;
 
       if (e.key === 'ArrowRight') {
@@ -66,7 +66,7 @@ export default function AudioPlayer({ audioUrl = url }) {
           return tempProgress;
         });
       }
-      function fn(progress, audio) {
+      function fn(progress: number, audio: HTMLAudioElement | null) {
         if (audio) {
           let currentTime = (progress / 100) * audio.duration;
           audio.currentTime = currentTime;
@@ -77,21 +77,20 @@ export default function AudioPlayer({ audioUrl = url }) {
       }
     };
 
-    const bar = barRef.current;
-    if (bar) {
-      bar.addEventListener('keydown', onKeyDown);
+    if (parentDiv) {
+      parentDiv.addEventListener('keydown', onKeyDown);
     }
 
     return () => {
-      bar && bar.removeEventListener('keydown', onKeyDown);
+      parentDiv && parentDiv.removeEventListener('keydown', onKeyDown);
     };
   }, []);
 
-  const onPlayMedia = (e) => {
+  const onPlayMedia = (e: React.MouseEvent<HTMLButtonElement>) => {
     setPaused(!paused);
     const audio = audioRef.current;
-    if (paused) audio.play();
-    else audio.pause();
+    if (paused) audio!.play();
+    else audio!.pause();
   };
 
   const progressBarStyles = {
@@ -155,7 +154,7 @@ export default function AudioPlayer({ audioUrl = url }) {
   );
 }
 
-function formatTime(milliseconds) {
+function formatTime(milliseconds: number) {
   const hours = Math.floor(milliseconds / 3600000);
   const minutes = Math.floor((milliseconds % 3600000) / 60000);
   const seconds = Math.floor((milliseconds % 60000) / 1000);
